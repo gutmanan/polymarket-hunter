@@ -1,4 +1,5 @@
 import asyncio
+import requests
 from src.websocket.polymarket_ws import PolymarketWebSocket
 from src.websocket.handlers import MessageHandler
 from src.utils.logger import setup_logger
@@ -32,6 +33,20 @@ class PolymarketHunter:
             markets = [
                 "fed-rate-hike-in-2025",
             ]
+
+            API_BASE = "https://gamma-api.polymarket.com"  # adjust if needed
+
+            def get_market_id_from_slug(slug: str) -> dict:
+                print(f"Fetching market ID for slug: {slug}")
+                url = f"{API_BASE}/markets/slug/{slug}"
+                resp = requests.get(url)
+                resp.raise_for_status()
+                data = resp.json()
+                print(f"Received data: {data}")
+                return data  # inspect it; it should contain condition_id, slug, outcomes, etc.
+            print(f"Market slugs to subscribe: {markets}")
+            markets = [get_market_id_from_slug(slug).get("conditionId") for slug in markets]
+            print(f"Subscribing to market IDs: {markets}")
             await self.ws_client.subscribe(markets)
             
             # Start listening

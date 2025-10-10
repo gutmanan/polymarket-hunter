@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     )
     POLYMARKET_API_KEY: Optional[str] = Field(default=None, env="POLYMARKET_API_KEY")
     POLYMARKET_PRIVATE_KEY: Optional[str] = Field(default=None, env="POLYMARKET_PRIVATE_KEY")
+    POLYMARKET_API_SECRET: Optional[str] = Field(default=None, env="POLYMARKET_API_SECRET")
+    POLYMARKET_API_PASSPHRASE: Optional[str] = Field(default=None, env="POLYMARKET_API_PASSPHRASE")
     
     # MCP Servers
     MCP_NEWS_SERVER: str = Field(default="http://localhost:3001", env="MCP_NEWS_SERVER")

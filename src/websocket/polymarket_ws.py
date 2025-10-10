@@ -1,107 +1,100 @@
 import asyncio
+import requests
 import json
-import websockets
+from websocket import WebSocketApp
+import json
+import time
+import threading
 from typing import Callable, Optional, Dict, Any
 from src.utils.logger import setup_logger
 from src.config.settings import settings
 
 logger = setup_logger(__name__)
 
+MARKET_CHANNEL = "market"
+USER_CHANNEL = "user"
 
 class PolymarketWebSocket:
-    """WebSocket client for Polymarket real-time data"""
-    
-    def __init__(self, url: Optional[str] = None):
-        self.url = url or settings.POLYMARKET_WS_URL
-        self.ws: Optional[websockets.WebSocketClientProtocol] = None
-        self.is_connected = False
-        self.message_handlers: list[Callable] = []
-        self._reconnect_attempts = 0
-        self._max_reconnect_attempts = 5
-        
-    async def connect(self) -> None:
-        """Establish WebSocket connection"""
-        try:
-            logger.info(f"Connecting to Polymarket WebSocket: {self.url}")
-            self.ws = await websockets.connect(
-                self.url,
-                ping_interval=20,
-                ping_timeout=10
+    def __init__(self, channel_type, url, data, auth, message_callback, verbose):
+        self.channel_type = channel_type
+        self.url = url
+        self.data = data
+        self.auth = auth
+        self.message_callback = message_callback
+        self.verbose = verbose
+        furl = url + "/ws/" + channel_type
+        self.ws = WebSocketApp(
+            furl,
+            on_message=self.on_message,
+            on_error=self.on_error,
+            on_close=self.on_close,
+            on_open=self.on_open,
+        )
+        self.orderbooks = {}
+
+    def on_message(self, ws, message):
+        print(message)
+        pass
+
+    def on_error(self, ws, error):
+        print("Error: ", error)
+        exit(1)
+
+    def on_close(self, ws, close_status_code, close_msg):
+        print("closing")
+        exit(0)
+
+    def on_open(self, ws):
+        if self.channel_type == MARKET_CHANNEL:
+            ws.send(json.dumps({"assets_ids": self.data, "type": MARKET_CHANNEL}))
+        elif self.channel_type == USER_CHANNEL and self.auth:
+            ws.send(
+                json.dumps(
+                    {"markets": self.data, "type": USER_CHANNEL, "auth": self.auth}
+                )
             )
-            self.is_connected = True
-            self._reconnect_attempts = 0
-            logger.info("Successfully connected to Polymarket WebSocket")
-        except Exception as e:
-            logger.error(f"Failed to connect to WebSocket: {e}")
-            raise
-    
-    async def disconnect(self) -> None:
-        """Close WebSocket connection"""
-        if self.ws:
-            await self.ws.close()
-            self.is_connected = False
-            logger.info("Disconnected from Polymarket WebSocket")
-    
-    async def subscribe(self, market_ids: list[str]) -> None:
-        """Subscribe to specific market updates"""
-        if not self.is_connected or not self.ws:
-            raise ConnectionError("WebSocket not connected")
-        
-        subscription_message = {
-            "type": "subscribe",
-            "markets": market_ids
-        }
-        
-        await self.ws.send(json.dumps(subscription_message))
-        logger.info(f"Subscribed to {len(market_ids)} markets")
-    
-    def add_handler(self, handler: Callable[[Dict[Any, Any]], None]) -> None:
-        """Add a message handler"""
-        self.message_handlers.append(handler)
-    
-    async def listen(self) -> None:
-        """Listen for incoming messages"""
-        if not self.is_connected or not self.ws:
-            raise ConnectionError("WebSocket not connected")
-        
-        logger.info("Starting to listen for messages...")
-        
-        try:
-            async for message in self.ws:
-                try:
-                    data = json.loads(message)
-                    logger.debug(f"Received message: {data}")
-                    
-                    # Call all registered handlers
-                    for handler in self.message_handlers:
-                        try:
-                            await handler(data)
-                        except Exception as e:
-                            logger.error(f"Handler error: {e}")
-                            
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse message: {e}")
-                    
-        except websockets.exceptions.ConnectionClosed:
-            logger.warning("WebSocket connection closed")
-            self.is_connected = False
-            await self._reconnect()
-    
-    async def _reconnect(self) -> None:
-        """Attempt to reconnect with exponential backoff"""
-        if self._reconnect_attempts >= self._max_reconnect_attempts:
-            logger.error("Max reconnection attempts reached")
-            return
-        
-        self._reconnect_attempts += 1
-        wait_time = min(2 ** self._reconnect_attempts, 60)
-        logger.info(f"Reconnecting in {wait_time} seconds (attempt {self._reconnect_attempts})")
-        
-        await asyncio.sleep(wait_time)
-        
-        try:
-            await self.connect()
-            await self.listen()
-        except Exception as e:
-            logger.error(f"Reconnection failed: {e}")
-            await self._reconnect()
+        else:
+            exit(1)
+
+        thr = threading.Thread(target=self.ping, args=(ws,))
+        thr.start()
+
+    def ping(self, ws):
+        while True:
+            ws.send("PING")
+            time.sleep(10)
+
+    def run(self):
+        self.ws.run_forever()
+
+
+def get_markets_from_slug(slug: str) -> dict:
+        API_BASE = "https://gamma-api.polymarket.com"
+        print(f"Fetching market ID for slug: {slug}")
+        url = f"{API_BASE}/events/slug/{slug}"
+        resp = requests.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+        return data  # inspect it; it should contain condition_id, slug, outcomes, etc.
+
+if __name__ == "__main__":
+    url = "wss://ws-subscriptions-clob.polymarket.com"
+    #Complete these by exporting them from your initialized client. 
+    api_key = "9e6a0446-71ff-0e56-b26c-35b9ad65f701"
+    api_secret = "kluI3do6m-eL3CtskrjQ1VouISC_mmfSuF_qleHX9lQ="
+    api_passphrase = "f8847d0b9e08ff404aa20f0e05a066b791de68e28146549119c1e906e2ccdf30"
+    slug = "trump-invokes-the-insurrection-act-in-2025"
+    assets = [json.loads(market.get("clobTokenIds")) for market in get_markets_from_slug(slug).get("markets", [])]
+    condition_ids = [] # no really need to filter by this one
+
+    auth = {"apiKey": api_key, "secret": api_secret, "passphrase": api_passphrase}
+
+    market_connection = PolymarketWebSocket(
+        MARKET_CHANNEL, url, assets[0], auth, None, True
+    )
+    user_connection = PolymarketWebSocket(
+        USER_CHANNEL, url, condition_ids, auth, None, True
+    )
+
+    market_connection.run()
+    # user_connection.run()
