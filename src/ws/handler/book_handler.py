@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from src.ws.handlers import MessageHandler, MessageContext
+from src.ws.handler.handlers import MessageHandler, MessageContext
 
 
 class BookHandler(MessageHandler):
@@ -8,4 +8,4 @@ class BookHandler(MessageHandler):
         return msg["event_type"] == "book"
 
     def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
-        ctx.logger.info(f"Current book {len(msg['bids'])} bids, {len(msg['asks'])} asks")
+        ctx.logger.debug(f"Current book {len(msg['bids'])} bids, {len(msg['asks'])} asks")

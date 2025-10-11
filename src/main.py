@@ -46,7 +46,7 @@ class PolymarketHunter:
 async def main():
     """Application entry point"""
     slugs = [
-        "bitcoin-up-or-down-october-11-8am-et"
+        "bitcoin-up-or-down-october-11-9am-et"
     ]
     app = PolymarketHunter(slugs)
     await app.start()

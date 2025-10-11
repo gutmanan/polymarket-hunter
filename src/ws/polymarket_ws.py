@@ -7,9 +7,9 @@ from websocket import WebSocketApp
 from src.client.gamma_client import GammaClient
 from src.config.settings import settings
 from src.utils.logger import setup_logger
-from src.ws.book_handler import BookHandler
-from src.ws.handlers import MessageContext, MessageRouter
-from src.ws.price_handler import PriceChangeHandler
+from src.ws.handler.book_handler import BookHandler
+from src.ws.handler.handlers import MessageContext, MessageRouter
+from src.ws.handler.price_handler import PriceChangeHandler
 
 logger = setup_logger(__name__)
 
