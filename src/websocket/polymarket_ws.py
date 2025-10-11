@@ -1,13 +1,15 @@
-import asyncio
-import requests
 import json
-from websocket import WebSocketApp
-import json
-import time
 import threading
-from typing import Callable, Optional, Dict, Any
-from src.utils.logger import setup_logger
+import time
+
+import requests
+from websocket import WebSocketApp
+
+from src.client.gamma_client import GammaClient
 from src.config.settings import settings
+from src.utils.logger import setup_logger
+from src.websocket.handlers import MessageContext, MessageRouter
+from src.websocket.price_handler import PriceChangeHandler
 
 logger = setup_logger(__name__)
 
@@ -15,29 +17,45 @@ MARKET_CHANNEL = "market"
 USER_CHANNEL = "user"
 
 class PolymarketWebSocket:
-    def __init__(self, channel_type, url, data, auth, message_callback, verbose):
+    def __init__(self, channel_type, market_assets):
         self.channel_type = channel_type
-        self.url = url
-        self.data = data
-        self.auth = auth
-        self.message_callback = message_callback
-        self.verbose = verbose
-        furl = url + "/ws/" + channel_type
+        self.url = settings.POLYMARKET_WS_URL
+        self.auth = settings.get_auth_creds()
+        self.data = market_assets
         self.ws = WebSocketApp(
-            furl,
+            f"{self.url}/ws/{self.channel_type}",
             on_message=self.on_message,
             on_error=self.on_error,
             on_close=self.on_close,
             on_open=self.on_open,
         )
-        self.orderbooks = {}
+        # message handlers setup
+        ctx = MessageContext(logger=logger, gamma_client=GammaClient())
+        handlers = [
+            PriceChangeHandler(),
+        ]
+        self.router = MessageRouter(handlers, ctx)
+
 
     def on_message(self, ws, message):
-        print(message)
-        pass
+        if message == "PONG":  # server heartbeat
+            return
+        try:
+            payload = json.loads(message)
+        except json.JSONDecodeError:
+            logger.warning(f"Non-JSON message: {message[:200]}")
+            return
+
+        if isinstance(payload, list):
+            for item in payload:
+                if isinstance(item, dict):
+                    self.router.dispatch(item)
+            return
+
+        self.router.dispatch(payload)
 
     def on_error(self, ws, error):
-        print("Error: ", error)
+        logger.warning(f"WS closed: error={error}")
         exit(1)
 
     def on_close(self, ws, close_status_code, close_msg):
@@ -48,11 +66,7 @@ class PolymarketWebSocket:
         if self.channel_type == MARKET_CHANNEL:
             ws.send(json.dumps({"assets_ids": self.data, "type": MARKET_CHANNEL}))
         elif self.channel_type == USER_CHANNEL and self.auth:
-            ws.send(
-                json.dumps(
-                    {"markets": self.data, "type": USER_CHANNEL, "auth": self.auth}
-                )
-            )
+            ws.send(json.dumps({"markets": self.data, "type": USER_CHANNEL, "auth": self.auth}))
         else:
             exit(1)
 
@@ -67,34 +81,12 @@ class PolymarketWebSocket:
     def run(self):
         self.ws.run_forever()
 
-
-def get_markets_from_slug(slug: str) -> dict:
-        API_BASE = "https://gamma-api.polymarket.com"
-        print(f"Fetching market ID for slug: {slug}")
-        url = f"{API_BASE}/events/slug/{slug}"
-        resp = requests.get(url)
-        resp.raise_for_status()
-        data = resp.json()
-        return data  # inspect it; it should contain condition_id, slug, outcomes, etc.
+    def close(self):
+        self.ws.close()
 
 if __name__ == "__main__":
-    url = "wss://ws-subscriptions-clob.polymarket.com"
-    #Complete these by exporting them from your initialized client. 
-    api_key = "9e6a0446-71ff-0e56-b26c-35b9ad65f701"
-    api_secret = "kluI3do6m-eL3CtskrjQ1VouISC_mmfSuF_qleHX9lQ="
-    api_passphrase = "f8847d0b9e08ff404aa20f0e05a066b791de68e28146549119c1e906e2ccdf30"
-    slug = "trump-invokes-the-insurrection-act-in-2025"
-    assets = [json.loads(market.get("clobTokenIds")) for market in get_markets_from_slug(slug).get("markets", [])]
-    condition_ids = [] # no really need to filter by this one
-
-    auth = {"apiKey": api_key, "secret": api_secret, "passphrase": api_passphrase}
-
-    market_connection = PolymarketWebSocket(
-        MARKET_CHANNEL, url, assets[0], auth, None, True
-    )
-    user_connection = PolymarketWebSocket(
-        USER_CHANNEL, url, condition_ids, auth, None, True
-    )
-
+    slug = "bitcoin-up-or-down-october-11-4am-et"
+    gamma = GammaClient()
+    assets = [json.loads(market.get("clobTokenIds")) for market in gamma.get_markets_by_slug(slug)]
+    market_connection = PolymarketWebSocket(MARKET_CHANNEL, assets[0])
     market_connection.run()
-    # user_connection.run()

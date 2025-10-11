@@ -1,7 +1,7 @@
-import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+
 from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -13,12 +13,8 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(default=False, env="DEBUG")
     
     # Polymarket
-    POLYMARKET_WS_URL: str = Field(
-        default="wss://ws-subscriptions-clob.polymarket.com/ws/market",
-        env="POLYMARKET_WS_URL"
-    )
+    POLYMARKET_WS_URL: str = Field(default="wss://ws-subscriptions-clob.polymarket.com", env="POLYMARKET_WS_URL")
     POLYMARKET_API_KEY: Optional[str] = Field(default=None, env="POLYMARKET_API_KEY")
-    POLYMARKET_PRIVATE_KEY: Optional[str] = Field(default=None, env="POLYMARKET_PRIVATE_KEY")
     POLYMARKET_API_SECRET: Optional[str] = Field(default=None, env="POLYMARKET_API_SECRET")
     POLYMARKET_API_PASSPHRASE: Optional[str] = Field(default=None, env="POLYMARKET_API_PASSPHRASE")
     
@@ -31,7 +27,10 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
     LOG_FILE: str = Field(default="logs/app.log", env="LOG_FILE")
-    
+
+    def get_auth_creds(self):
+        return {"apiKey": self.POLYMARKET_API_KEY, "secret": self.POLYMARKET_API_SECRET, "passphrase": self.POLYMARKET_API_PASSPHRASE}
+
     class Config:
         env_file = ".env"
         case_sensitive = True

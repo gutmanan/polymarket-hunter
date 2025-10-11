@@ -1,31 +1,39 @@
-from typing import Dict, Any
-from src.utils.logger import setup_logger
+from __future__ import annotations
+from typing import Protocol, Any, Dict, List, Optional
 
-logger = setup_logger(__name__)
+class MessageHandler(Protocol):
+    def can_handle(self, msg: Dict[str, Any]) -> bool:
+        """Fast predicate: return True if this handler wants this message."""
+        ...
 
+    def handle(self, msg: Dict[str, Any], ctx: "MessageContext") -> None:
+        """Do the work. Raise only for unexpected errors."""
+        ...
 
-class MessageHandler:
-    """Handlers for different WebSocket message types"""
-    
-    @staticmethod
-    async def handle_price_update(data: Dict[Any, Any]) -> None:
-        """Handle price update messages"""
-        if data.get("type") == "price_update":
-            market_id = data.get("market_id")
-            price = data.get("price")
-            logger.info(f"Price update for market {market_id}: {price}")
-            
-    @staticmethod
-    async def handle_volume_update(data: Dict[Any, Any]) -> None:
-        """Handle volume update messages"""
-        if data.get("type") == "volume_update":
-            market_id = data.get("market_id")
-            volume = data.get("volume")
-            logger.info(f"Volume update for market {market_id}: {volume}")
-            
-    @staticmethod
-    async def handle_market_creation(data: Dict[Any, Any]) -> None:
-        """Handle new market creation messages"""
-        if data.get("type") == "market_created":
-            market_id = data.get("market_id")
-            logger.info(f"New market created: {market_id}")
+class MessageContext:
+    """
+    Shared context DI container for handlers.
+    Put things like logger, caches, clients, config, queues, etc.
+    """
+    def __init__(self, *, logger, gamma_client=None):
+        self.logger = logger
+        self.gamma_client = gamma_client
+
+class MessageRouter:
+    """Keeps a registry of handlers and dispatches messages to each matching one."""
+    def __init__(self, handlers: List[MessageHandler], ctx: MessageContext):
+        self.handlers = handlers
+        self.ctx = ctx
+
+    def dispatch(self, msg: Dict[str, Any]) -> None:
+        matched = False
+        for h in self.handlers:
+            try:
+                if h.can_handle(msg):
+                    matched = True
+                    h.handle(msg, self.ctx)
+            except Exception as e:
+                self.ctx.logger.exception(f"Handler {h.__class__.__name__} failed: {e}")
+        if not matched:
+            # optional: debug unmatched messages
+            self.ctx.logger.debug(f"No handler matched message type={msg.get('type')} keys={list(msg.keys())}")
