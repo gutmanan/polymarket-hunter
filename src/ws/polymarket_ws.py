@@ -2,14 +2,14 @@ import json
 import threading
 import time
 
-import requests
 from websocket import WebSocketApp
 
 from src.client.gamma_client import GammaClient
 from src.config.settings import settings
 from src.utils.logger import setup_logger
-from src.websocket.handlers import MessageContext, MessageRouter
-from src.websocket.price_handler import PriceChangeHandler
+from src.ws.book_handler import BookHandler
+from src.ws.handlers import MessageContext, MessageRouter
+from src.ws.price_handler import PriceChangeHandler
 
 logger = setup_logger(__name__)
 
@@ -33,6 +33,7 @@ class PolymarketWebSocket:
         ctx = MessageContext(logger=logger, gamma_client=GammaClient())
         handlers = [
             PriceChangeHandler(),
+            BookHandler()
         ]
         self.router = MessageRouter(handlers, ctx)
 

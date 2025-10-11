@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import Protocol, Any, Dict, List, Optional
+
+from typing import Protocol, Any, Dict, List
+
 
 class MessageHandler(Protocol):
     def can_handle(self, msg: Dict[str, Any]) -> bool:
