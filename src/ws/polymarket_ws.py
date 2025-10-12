@@ -89,5 +89,6 @@ if __name__ == "__main__":
     slug = "bitcoin-up-or-down-october-11-4am-et"
     gamma = GammaClient()
     assets = [json.loads(market.get("clobTokenIds")) for market in gamma.get_markets_by_slug(slug)]
+    print(assets)
     market_connection = PolymarketWebSocket(MARKET_CHANNEL, assets[0])
     market_connection.run()
