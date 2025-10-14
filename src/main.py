@@ -1,7 +1,6 @@
 import asyncio
 import json
 
-from src.client.gamma_client import GammaClient
 from src.config.settings import settings
 from src.utils.logger import setup_logger
 from src.ws.polymarket_ws import PolymarketWebSocket, MARKET_CHANNEL
@@ -13,8 +12,7 @@ class PolymarketHunter:
     """Main application class"""
 
     def __init__(self, slugs: list[str]) -> None:
-        self.gamma = GammaClient()
-        self.ws = PolymarketWebSocket(MARKET_CHANNEL, self.slugs_to_assets(slugs))
+        self.ws = PolymarketWebSocket(MARKET_CHANNEL, slugs)
 
     async def start(self) -> None:
         """Start the application"""
@@ -34,23 +32,13 @@ class PolymarketHunter:
         logger.info("Cleaning up resources...")
         self.ws.close()
 
-    def slugs_to_assets(self, slugs: list[str]) -> list[dict]:
-        return [
-            asset
-            for slug in slugs
-            for market in self.gamma.get_markets_by_slug(slug)
-            for asset in json.loads(market["clobTokenIds"])
-        ]
-
-
 async def main():
     """Application entry point"""
     slugs = [
-        "bitcoin-up-or-down-october-11-9am-et"
+        "bitcoin-up-or-down-october-13-9am-et"
     ]
     app = PolymarketHunter(slugs)
     await app.start()
-
 
 if __name__ == "__main__":
     asyncio.run(main())

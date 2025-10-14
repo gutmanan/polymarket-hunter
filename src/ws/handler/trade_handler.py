@@ -3,10 +3,11 @@ from typing import Dict, Any
 from src.ws.handler.handlers import MessageHandler, MessageContext
 
 
-class BookHandler(MessageHandler):
+class TradeHandler(MessageHandler):
     def can_handle(self, msg: Dict[str, Any]) -> bool:
-        return msg["event_type"] == "book"
+        return msg["event_type"] == "last_trade_price"
 
     def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
         market = ctx.markets[msg["market"]]  # ensure market is known
-        ctx.logger.debug(f"{market['slug']} current book {len(msg['bids'])} bids, {len(msg['asks'])} asks")
+        ctx.logger.debug(f"{market['slug']} last trade price: {msg['price']} at {msg['timestamp']}")
+
