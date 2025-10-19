@@ -1,5 +1,4 @@
 import asyncio
-import json
 
 from src.config.settings import settings
 from src.utils.logger import setup_logger
@@ -35,7 +34,7 @@ class PolymarketHunter:
 async def main():
     """Application entry point"""
     slugs = [
-        "bitcoin-up-or-down-october-13-9am-et"
+        "bitcoin-up-or-down-october-19-1pm-et"
     ]
     app = PolymarketHunter(slugs)
     await app.start()

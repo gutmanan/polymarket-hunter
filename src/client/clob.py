@@ -116,15 +116,19 @@ class CLOBClient:
         CLOB-native limit order. side: 0=BUY, 1=SELL (use py_clob_client.order_builder.constants BUY/SELL)
         """
         args = OrderArgs(token_id=token_id, price=price, size=size, side=side)
-        return self.client.create_and_post_order(args)
+        print("Limit orders not supported yet.", args)
+        # return self.client.create_and_post_order(args)
+        return ""
 
     def execute_market_order(self, token_id: str, amount: float, order_type: OrderType = OrderType.FOK) -> Dict[str, Any]:
         """
         Market order: amount is the notional size in quote units the CLOB expects.
         """
         args = MarketOrderArgs(token_id=token_id, amount=amount)
-        signed = self.client.create_market_order(args)
-        return self.client.post_order(signed, orderType=order_type)
+        # signed = self.client.create_market_order(args)
+        # return self.client.post_order(signed, orderType=order_type)
+        print("Market orders not supported yet.", args)
+        return {}
 
     def cancel_order(self, order_id: str) -> Dict[str, Any]:
         """
