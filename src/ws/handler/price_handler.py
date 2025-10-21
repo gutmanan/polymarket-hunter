@@ -1,116 +1,260 @@
-# src/ws/handler/price_change_handler.py
 import json
-from typing import Any, Dict, Optional
-
+import time
+import threading
+from decimal import Decimal
+from typing import Dict, Any, List, Tuple, Callable, Optional, TypedDict
 from src.ws.handler.handlers import MessageHandler, MessageContext
+from py_clob_client.order_builder.constants import BUY, SELL
 
-TARGET_SUM = 0.90          # buy both if best_ask_up + best_ask_down ≤ 0.90  (~10% edge)
-SIZE_USD_BUDGET = 90.0     # max total USDC spend across BOTH legs at TARGET_SUM
-MIN_SHARES = 5.0           # require at least this many shares per leg (avoid dust)
-MAX_SHARES = 200.0         # cap each leg size (risk cap)
-SPREAD_CAP = 0.02          # optional: skip if any leg's (ask-bid) > 2c
 
-BUY_SIDE = 0               # py_clob_client convention: 0=BUY, 1=SELL
+TERMINAL_STATUSES = {"matched", "filled", "cancelled", "rejected", "failed"}
+NON_TERMINAL_STATUSES = {"open", "live", "unmatched", "delayed", "partial"}
+
+
+class OpenBlock(TypedDict, total=False):
+    """Unified shape for what's blocking placement: either an open order or an active position."""
+    block_type: str               # "order" | "position"
+    market_id: str
+    asset_id: str
+    side: str                     # for orders; optional/unknown for position
+    status: str                   # order status OR "position"
+    order_id: Optional[str]       # for orders
+    size: Optional[Decimal]       # for positions
+    created_at: Optional[float]
+    source: str                   # "orders_map" | "positions_api"
+
 
 class PriceChangeHandler(MessageHandler):
+    def __init__(self):
+        # price_map[market_id][asset_id] -> {"outcome": str, "buy": float, "sell": float}
+        self.price_map: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        # orders_map[(market_id, asset_id)] -> order info (only NON-terminal stay here)
+        self.orders_map: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        self._lock = threading.Lock()
+
     def can_handle(self, msg: Dict[str, Any]) -> bool:
         return msg.get("event_type") == "price_change"
 
-    # ---- tiny helpers -------------------------------------------------------
-
-    def _pair_tokens(self, ctx: MessageContext, condition_id: str) -> Optional[tuple[str, str]]:
-        m = ctx.markets.get(condition_id)
-        if not m:
-            return None
-        try:
-            ids = json.loads(m.get("clobTokenIds", "[]"))
-            if len(ids) == 2:
-                return (str(ids[0]), str(ids[1]))
-        except Exception:
-            pass
-        return None
-
-    def _extract_leg(self, price_changes: list[dict], token_id: str) -> Optional[dict]:
-        for pc in price_changes:
-            if pc.get("asset_id") == token_id:
-                return pc
-        return None
-
-    def _safe_float(self, v: Any, default: float = 0.0) -> float:
-        try:
-            return float(v)
-        except Exception:
-            return default
-
-    def _shares_from_budget(self, ask_sum: float) -> float:
-        if ask_sum <= 0:
-            return 0.0
-        s = SIZE_USD_BUDGET / ask_sum
-        return max(MIN_SHARES, min(MAX_SHARES, s))
-
-    # ---- main ---------------------------------------------------------------
-
     def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
-        pcs = msg.get("price_changes") or []
-        condition_id = msg.get("market")
-        pair = self._pair_tokens(ctx, condition_id)
-        if not pair:
-            return
+        self.update_prices(msg, ctx)
+        market_id = msg["market"]
+        predicate = lambda p: 0.7 <= float(p) <= 0.8
+        matches = self.find_assets(market_id, side=BUY, predicate=predicate)
 
-        t0, t1 = pair
-        leg0 = self._extract_leg(pcs, t0)
-        leg1 = self._extract_leg(pcs, t1)
+        for asset_id, _ in matches:
+            if not self.can_place_order(ctx, market_id, asset_id):
+                # Already have an open order OR a live position for this asset in this market
+                continue
 
-        # If event didn’t carry both legs (can happen), bail — we only act when we see both asks together.
-        if not (leg0 and leg1):
-            return
+            # If you place, consider pessimistic marking to prevent double-fire in the same tick
+            resp = self.place_market_order(ctx, market_id, asset_id, side=BUY, amount=1)
+            self.update_orders_from_response(market_id, asset_id, side=BUY, response=resp)
 
-        bid0 = self._safe_float(leg0.get("best_bid"))
-        ask0 = self._safe_float(leg0.get("best_ask"))
-        bid1 = self._safe_float(leg1.get("best_bid"))
-        ask1 = self._safe_float(leg1.get("best_ask"))
+    # ---------- pricing ----------
 
-        # Optional sanity: avoid super-wide legs
-        if (ask0 - bid0) > SPREAD_CAP or (ask1 - bid1) > SPREAD_CAP:
-            return
+    def update_prices(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
+        market_id = msg["market"]
+        market = ctx.markets[market_id]
 
-        ask_sum = ask0 + ask1
-        if ask_sum > TARGET_SUM:
-            return  # no edge
+        token_ids = json.loads(market["clobTokenIds"])
+        outcomes = json.loads(market["outcomes"])
 
-        # Compute equal-shares size so total spend ~ SIZE_USD_BUDGET
-        shares = self._shares_from_budget(ask_sum)
-        if shares < MIN_SHARES:
-            return
+        market_book = self.price_map.setdefault(market_id, {})
 
-        # Place LIMIT BUY on both legs at observed asks to cap slippage
-        # Assumes your CLOBClient has execute_limit_order(token_id, price, size, side)
-        # If you only have market, you lose the price cap—strongly prefer limit.
-        try:
-            oid0 = ctx.clob_client.execute_limit_order(token_id=t0, price=ask0, size=shares, side=BUY_SIDE)
-        except Exception as e:
-            ctx.logger.error(f"[ARBIT] leg0 limit failed {t0} @ {ask0}: {e}")
-            return
-
-        try:
-            oid1 = ctx.clob_client.execute_limit_order(token_id=t1, price=ask1, size=shares, side=BUY_SIDE)
-        except Exception as e:
-            ctx.logger.error(f"[ARBIT] leg1 limit failed {t1} @ {ask1}: {e} — unwinding leg0")
-            # Best-effort unwind leg0 if leg1 failed
+        for pc in msg["price_changes"]:
+            asset_id = pc["asset_id"]
             try:
-                # Cancel first; if cancel API isn’t available or it already filled, dump with market.
-                ctx.clob_client.cancel_order(oid0)
-            except Exception:
-                # If cancel not possible, dump via market (could lose a few bps)
-                notional0 = shares * ask0
-                try:
-                    ctx.clob_client.execute_market_order(token_id=t0, amount=notional0)
-                except Exception as e2:
-                    ctx.logger.error(f"[ARBIT] unwind of leg0 failed: {e2}")
-            return
+                outcome = outcomes[token_ids.index(asset_id)]
+            except ValueError:
+                continue  # unknown asset_id, skip
 
-        ctx.logger.info(f"[ARBIT] Bought both legs {t0}@{ask0:.3f} + {t1}@{ask1:.3f} | shares={shares:.2f} | sum={ask_sum:.3f}")
+            asset_book = market_book.setdefault(asset_id, {"outcome": outcome})
+            asset_book[pc["side"]] = pc["price"]
 
-        # From here you’re delta-neutral; no need to manage TP/SL.
-        # You can optionally add a tiny monitor to verify both orders filled
-        # and re-buy small residuals if partial fills are common.
+    def find_assets(
+            self,
+            market_id: str,
+            side: str,
+            predicate: Callable[[float], bool]
+    ) -> List[Tuple[str, Dict[str, Any]]]:
+        market_book = self.price_map.get(market_id, {})
+        results: List[Tuple[str, Dict[str, Any]]] = []
+        for asset_id, obj in market_book.items():
+            price = obj.get(side)
+            if price is not None and predicate(price):
+                results.append((asset_id, obj))
+        return results
+
+    # ---------- unified "open" guard (order OR position) ----------
+
+    def can_place_order(self, ctx: MessageContext, market_id: str, asset_id: str) -> bool:
+        """True iff there is no open order AND no active position for (market_id, asset_id)."""
+        return self.get_open_block(ctx, market_id, asset_id) is None
+
+    def get_open_block(self, ctx: MessageContext, market_id: str, asset_id: str) -> Optional[OpenBlock]:
+        """
+        Returns a normalized blocker dict if an open order exists (non-terminal)
+        or if there is an active position from the Polymarket Data API.
+        Otherwise returns None.
+        """
+        # 1) Check in-memory open order first
+        with self._lock:
+            order = self.orders_map.get((market_id, asset_id))
+
+        if order:
+            status = (order.get("status") or "").lower()
+            if status in NON_TERMINAL_STATUSES or status not in TERMINAL_STATUSES:
+                # Treat unknown status as non-terminal (defensive)
+                return OpenBlock(
+                    block_type="order",
+                    market_id=market_id,
+                    asset_id=asset_id,
+                    side=str(order.get("side") or ""),
+                    status=status or "open",
+                    order_id=order.get("order_id"),
+                    created_at=float(order.get("created_at") or time.time()),
+                    source="orders_map",
+                )
+
+        # 2) Fallback to active positions (size > 0 for that asset)
+        pos = self._fetch_active_position(ctx, market_id, asset_id)
+        if pos is not None:
+            # Result sample provided by you: size, title, outcome, redeemable, etc.
+            size = Decimal(str(pos.get("size", "0")))
+            if size > 0:
+                return OpenBlock(
+                    block_type="position",
+                    market_id=market_id,
+                    asset_id=asset_id,
+                    side="",  # unknown; position could be net long this outcome
+                    status="position",
+                    order_id=None,
+                    size=size,
+                    created_at=None,
+                    source="positions_api",
+                )
+
+        return None
+
+    def _fetch_active_position(self, ctx: MessageContext, market_id: str, asset_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Query Data API for positions in this market and return the entry for this asset_id, if any.
+        Expects a list like you pasted; be defensive about shapes.
+        """
+        try:
+            results = ctx.data_client.get_positions(querystring_params={"market": [market_id]})
+        except Exception:
+            return None
+
+        if not results or not isinstance(results, list):
+            return None
+
+        return next((item for item in results if item.get("asset") == asset_id), None)
+
+    # ---------- order lifecycle ----------
+
+    def place_market_order(
+            self,
+            ctx: MessageContext,
+            market_id: str,
+            asset_id: str,
+            side: str,
+            amount: float,
+    ) -> Dict[str, Any]:
+        """
+        Pessimistically mark an open slot (non-terminal) to prevent duplicate placement in the same tick,
+        call the API, return response.
+        """
+        with self._lock:
+            self._mark_open_order_unlocked(market_id, asset_id, side, provisional=True, notes="pessimistic-open")
+
+        resp = ctx.clob_client.execute_market_order(
+            token_id=asset_id,
+            amount=amount,
+            side=side,
+        )
+        print(f"placed order: {resp}")
+        return resp
+
+    def update_orders_from_response(
+            self,
+            market_id: str,
+            asset_id: str,
+            side: str,
+            response: Dict[str, Any]
+    ) -> None:
+        """
+        Normalize & store the response.
+        Example response:
+        {
+          'errorMsg': '',
+          'orderID': '0x...',
+          'takingAmount': '1.612902',
+          'makingAmount': '0.999999',
+          'status': 'matched',
+          'transactionsHashes': ['0x...'],
+          'success': True
+        }
+        """
+        order_id = response.get("orderID")
+        status = (response.get("status") or "").lower()
+        success = bool(response.get("success"))
+        taking = response.get("takingAmount")
+        making = response.get("makingAmount")
+
+        record = {
+            "order_id": order_id,
+            "market_id": market_id,
+            "asset_id": asset_id,
+            "side": side,
+            "status": status or ("open" if success and not order_id else "failed"),
+            "taking_amount": Decimal(str(taking)) if taking is not None else None,
+            "making_amount": Decimal(str(making)) if making is not None else None,
+            "tx_hashes": list(response.get("transactionsHashes") or []),
+            "error": response.get("errorMsg") or None,
+            "success": success,
+            "created_at": time.time(),  # keep original insert time if you want; here we set/update
+            "updated_at": time.time(),
+        }
+
+        with self._lock:
+            self.orders_map[(market_id, asset_id)] = record
+            # Free the slot if terminal (e.g., market order matched immediately)
+            if status in TERMINAL_STATUSES:
+                self.orders_map.pop((market_id, asset_id), None)
+
+    def _mark_open_order_unlocked(self, market_id: str, asset_id: str, side: str, provisional: bool, notes: str = "") -> None:
+        self.orders_map[(market_id, asset_id)] = {
+            "order_id": None,
+            "market_id": market_id,
+            "asset_id": asset_id,
+            "side": side,
+            "status": "open" if provisional else "live",
+            "taking_amount": None,
+            "making_amount": None,
+            "tx_hashes": [],
+            "created_at": time.time(),
+            "notes": notes,
+        }
+
+    # ---------- optional hygiene ----------
+
+    def cleanup_stale_orders(self, ttl_seconds: float = 300.0) -> None:
+        """
+        Remove any non-terminal entries that look stuck or stale.
+        Call periodically if needed.
+        """
+        now = time.time()
+        with self._lock:
+            to_delete = []
+            for key, order in self.orders_map.items():
+                status = (order.get("status") or "").lower()
+                created = float(order.get("created_at") or now)
+                if status not in NON_TERMINAL_STATUSES:
+                    # Unknown status — be conservative and keep unless very stale
+                    if now - created > ttl_seconds:
+                        to_delete.append(key)
+                elif now - created > ttl_seconds:
+                    to_delete.append(key)
+            for k in to_delete:
+                self.orders_map.pop(k, None)

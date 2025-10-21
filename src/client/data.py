@@ -31,7 +31,7 @@ class DataClient:
 
     # ---------- user-scoped reads ----------
 
-    def get_positions(self, user: str, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
+    def get_positions(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
         Current (open) positions for the wallet/user.
         NOTE: If you trade via a funder/proxy, pass the *funder* address here.

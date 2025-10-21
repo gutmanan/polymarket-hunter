@@ -5,16 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/examples/market.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/price_change.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/constants.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ws/strategy/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ws/strategy/momentum.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/get_positions_response.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/market_order_response.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/clob.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/clob.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client/data.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/client/data.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ws/handler/handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/ws/handler/handlers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ws/handler/price_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/ws/handler/price_handler.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -60,10 +56,10 @@
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;junie.allowlist&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -155,7 +151,8 @@
       <workItem from="1760341713851" duration="8309000" />
       <workItem from="1760426077327" duration="16000" />
       <workItem from="1760426547692" duration="7143000" />
-      <workItem from="1760880806850" duration="4543000" />
+      <workItem from="1760880806850" duration="19604000" />
+      <workItem from="1761029743120" duration="254000" />
     </task>
     <servers />
   </component>
@@ -163,6 +160,6 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/polymarket_hunter$main.coverage" NAME="main Coverage Results" MODIFIED="1760895931708" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
+    <SUITE FILE_PATH="coverage/polymarket_hunter$main.coverage" NAME="main Coverage Results" MODIFIED="1760975415487" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src" />
   </component>
 </project>
