@@ -9,24 +9,27 @@ class Settings(BaseSettings):
     
     # Application
     APP_NAME: str = "Polymarket Hunter"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "0.2.0"
     DEBUG: bool = Field(default=False, env="DEBUG")
+    LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
+    LOG_FILE: str = Field(default="logs/app.log", env="LOG_FILE")
+    PORT: int = Field(default=8080, env="PORT")
+    API_KEY: str = Field(default="", env="API_KEY")
     
     # Polymarket
-    POLYMARKET_WS_URL: str = Field(default="wss://ws-subscriptions-clob.polymarket.com", env="POLYMARKET_WS_URL")
+    POLYMARKET_WS_URL: str = Field(default="wss://ws-subscriptions-clob.polymarket.com/ws/market", env="POLYMARKET_WS_URL")
+    DATA_HOST: str = Field(default="https://data-api.polymarket.com", env="DATA_HOST")
+    GAMMA_HOST: str = Field(default="https://gamma-api.polymarket.com", env="GAMMA_HOST")
+    CLOB_HOST: str = Field(default="https://clob.polymarket.com", env="CLOB_HOST")
+    RPC_URL: Optional[str] = Field(default="https://polygon-rpc.com", env="RPC_URL")
+
+    PRIVATE_KEY: Optional[str] = Field(default=None, env="PRIVATE_KEY")
     POLYMARKET_API_KEY: Optional[str] = Field(default=None, env="POLYMARKET_API_KEY")
     POLYMARKET_API_SECRET: Optional[str] = Field(default=None, env="POLYMARKET_API_SECRET")
     POLYMARKET_API_PASSPHRASE: Optional[str] = Field(default=None, env="POLYMARKET_API_PASSPHRASE")
-    
-    # MCP Servers
-    MCP_NEWS_SERVER: str = Field(default="http://localhost:3001", env="MCP_NEWS_SERVER")
-    MCP_TWITTER_SERVER: str = Field(default="http://localhost:3002", env="MCP_TWITTER_SERVER")
-    MCP_BINANCE_SERVER: str = Field(default="http://localhost:3003", env="MCP_BINANCE_SERVER")
-    MCP_POLYMARKET_SERVER: str = Field(default="http://localhost:3004", env="MCP_POLYMARKET_SERVER")
-    
-    # Logging
-    LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
-    LOG_FILE: str = Field(default="logs/app.log", env="LOG_FILE")
+
+    # Redis
+    REDIS_URL: str = Field(default="redis://redis:6379/0", env="REDIS_URL")
 
     def get_auth_creds(self):
         return {"apiKey": self.POLYMARKET_API_KEY, "secret": self.POLYMARKET_API_SECRET, "passphrase": self.POLYMARKET_API_PASSPHRASE}

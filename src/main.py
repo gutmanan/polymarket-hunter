@@ -1,43 +1,75 @@
 import asyncio
+from contextlib import asynccontextmanager
+from typing import Callable
 
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+
+from src.api.health import router as health_router
+from src.api.slugs import router as slugs_router
+from src.api.webhook import router as webhook_router
 from src.config.settings import settings
+from src.core.subscription_manager import SubscriptionManager
+from src.persistence.slug_store import RedisSlugStore
+from src.scheduler.scheduler import build_scheduler
 from src.utils.logger import setup_logger
-from src.ws.polymarket_ws import PolymarketWebSocket, MARKET_CHANNEL
 
 logger = setup_logger(__name__)
 
 
-class PolymarketHunter:
-    """Main application class"""
+# Dependency injection for routers
 
-    def __init__(self, slugs: list[str]) -> None:
-        self.ws = PolymarketWebSocket(MARKET_CHANNEL, slugs)
 
-    async def start(self) -> None:
-        """Start the application"""
-        logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    store = RedisSlugStore(settings.REDIS_URL)
+    manager = SubscriptionManager(store)
+    # inject manager into routers
+    import src.api.slugs as slugs_mod
+    slugs_mod.get_manager = manager
 
-        try:
-            self.ws.run()
-        except KeyboardInterrupt:
-            logger.info("Shutting down gracefully...")
-        except Exception as e:
-            logger.error(f"Application error: {e}", exc_info=True)
-        finally:
-            await self.cleanup()
+    async def resolve_markets(slugs: list[str]) -> list[dict]:
+        return await asyncio.to_thread(manager._ws_client._slugs_to_markets_sync, slugs)
 
-    async def cleanup(self) -> None:
-        """Cleanup resources"""
-        logger.info("Cleaning up resources...")
-        self.ws.close()
+    await manager.start()
+    scheduler = build_scheduler(manager, resolve_markets)
+    scheduler.start()
+    logger.info("Markets scheduler started.")
 
-async def main():
-    """Application entry point"""
-    slugs = [
-        "bitcoin-up-or-down-october-21-3am-et",
-    ]
-    app = PolymarketHunter(slugs)
-    await app.start()
+    try:
+        yield
+    finally:
+        scheduler.shutdown(wait=False)
+        await manager.stop()
 
-if __name__ == "__main__":
-    asyncio.run(main())
+
+def create_app() -> FastAPI:
+    app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
+
+    # CORS permissive for local use
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # API Key middleware for write endpoints when API_KEY set
+    if settings.API_KEY:
+        @app.middleware("http")
+        async def api_key_guard(request: Request, call_next: Callable):
+            if request.method in ("POST", "DELETE") and request.url.path.startswith(("/slugs", "/webhook")):
+                key = request.headers.get("X-API-Key")
+                if key != settings.API_KEY:
+                    return Response(status_code=401, content="Unauthorized")
+            return await call_next(request)
+
+    # Routers
+    app.include_router(health_router)
+    app.include_router(slugs_router)
+    app.include_router(webhook_router)
+
+    return app
+
+
+app = create_app()

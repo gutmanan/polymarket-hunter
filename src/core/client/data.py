@@ -3,8 +3,9 @@ from typing import Any, Dict, Optional
 
 import httpx
 from dotenv import load_dotenv
-from src.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
 from web3 import Web3
+
+from src.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
 
 load_dotenv()
 
