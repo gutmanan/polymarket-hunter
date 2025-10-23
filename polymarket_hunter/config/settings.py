@@ -10,12 +10,10 @@ class Settings(BaseSettings):
     # Application
     APP_NAME: str = "Polymarket Hunter"
     APP_VERSION: str = "0.2.0"
-    DEBUG: bool = Field(default=False, env="DEBUG")
     LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
-    LOG_FILE: str = Field(default="logs/app.log", env="LOG_FILE")
+    LOG_FILE: str = Field(default="logs/polymarket_hunter.log", env="LOG_FILE")
     PORT: int = Field(default=8080, env="PORT")
-    API_KEY: str = Field(default="", env="API_KEY")
-    
+
     # Polymarket
     POLYMARKET_WS_URL: str = Field(default="wss://ws-subscriptions-clob.polymarket.com/ws/market", env="POLYMARKET_WS_URL")
     DATA_HOST: str = Field(default="https://data-api.polymarket.com", env="DATA_HOST")
@@ -23,16 +21,11 @@ class Settings(BaseSettings):
     CLOB_HOST: str = Field(default="https://clob.polymarket.com", env="CLOB_HOST")
     RPC_URL: Optional[str] = Field(default="https://polygon-rpc.com", env="RPC_URL")
 
+    # Wallet
     PRIVATE_KEY: Optional[str] = Field(default=None, env="PRIVATE_KEY")
-    POLYMARKET_API_KEY: Optional[str] = Field(default=None, env="POLYMARKET_API_KEY")
-    POLYMARKET_API_SECRET: Optional[str] = Field(default=None, env="POLYMARKET_API_SECRET")
-    POLYMARKET_API_PASSPHRASE: Optional[str] = Field(default=None, env="POLYMARKET_API_PASSPHRASE")
 
     # Redis
     REDIS_URL: str = Field(default="redis://redis:6379/0", env="REDIS_URL")
-
-    def get_auth_creds(self):
-        return {"apiKey": self.POLYMARKET_API_KEY, "secret": self.POLYMARKET_API_SECRET, "passphrase": self.POLYMARKET_API_PASSPHRASE}
 
     class Config:
         env_file = ".env"

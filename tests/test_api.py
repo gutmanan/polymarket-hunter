@@ -4,9 +4,9 @@ import types
 import pytest
 from fastapi.testclient import TestClient
 
-from src.main import create_app
-from src.api import slugs as slugs_mod
-from src.core.subscription_manager import SubscriptionManager
+from polymarket_hunter.main import create_app
+from polymarket_hunter.api import slugs_router as slugs_mod
+from polymarket_hunter.core.subscription_manager import SubscriptionManager
 
 
 class FakeStore:
@@ -38,7 +38,7 @@ class FakeStore:
 
 @pytest.fixture
 def app():
-    # Build app with injected fake manager
+    # Build polymarket_hunter with injected fake manager
     from fastapi import FastAPI
 
     fake_store = FakeStore()

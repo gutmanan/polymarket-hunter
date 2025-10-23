@@ -4,9 +4,9 @@ import asyncio
 from datetime import datetime, timezone
 from typing import Protocol, Any, Dict, List
 
-from src.core.client.clob import CLOBClient
-from src.core.client.data import DataClient
-from src.core.client.gamma import GammaClient
+from polymarket_hunter.core.client.clob import CLOBClient
+from polymarket_hunter.core.client.data import DataClient
+from polymarket_hunter.core.client.gamma import GammaClient
 
 
 def to_map(objs: list[dict[str, Any]], key: str) -> Dict[str, Dict[str, Any]]:

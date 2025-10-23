@@ -1,4 +1,4 @@
-# src/core/ws_client.py
+# polymarket_hunter/core/ws_client.py
 from __future__ import annotations
 
 import asyncio
@@ -9,15 +9,15 @@ from typing import Any, List
 import websockets
 from websockets.legacy.client import WebSocketClientProtocol
 
-from src.config.settings import settings
-from src.core.client.clob import CLOBClient
-from src.core.client.data import DataClient
-from src.core.client.gamma import GammaClient
-from src.core.handler.handlers import MessageRouter, MessageContext  # async router
-from src.core.handler.price_handler import PriceChangeHandler
-from src.core.handler.book_handler import BookHandler
-from src.core.handler.trade_handler import TradeHandler
-from src.utils.logger import setup_logger
+from polymarket_hunter.config.settings import settings
+from polymarket_hunter.core.client.clob import CLOBClient
+from polymarket_hunter.core.client.data import DataClient
+from polymarket_hunter.core.client.gamma import GammaClient
+from polymarket_hunter.core.handler.book_handler import BookHandler
+from polymarket_hunter.core.handler.handlers import MessageRouter, MessageContext  # async router
+from polymarket_hunter.core.handler.price_handler import PriceChangeHandler
+from polymarket_hunter.core.handler.trade_handler import TradeHandler
+from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
@@ -32,17 +32,16 @@ class MarketWSClient:
     """
 
     def __init__(self, slugs: List[str]):
+        self.markets = self._slugs_to_markets_sync(slugs)  # initial (sync)
+        self._assets_ids = [a for m in self.markets for a in json.loads(m["clobTokenIds"])]
+
         self._gamma = GammaClient()
         self._clob = CLOBClient()
         self._data = DataClient()
 
-        self._slugs: List[str] = slugs[:]
-        self._markets = self._slugs_to_markets_sync(self._slugs)  # initial (sync)
-        self._assets_ids = [a for m in self._markets for a in json.loads(m["clobTokenIds"])]
-
         ctx = MessageContext(
             logger=logger,
-            markets=self._markets,
+            markets=self.markets,
             gamma_client=self._gamma,
             clob_client=self._clob,
             data_client=self._data,
@@ -75,14 +74,11 @@ class MarketWSClient:
 
     async def update_slugs(self, slugs: List[str]) -> None:
         # dedupe & keep order
-        uniq = list(dict.fromkeys(slugs))
-        if uniq == self._slugs:
-            return
-        self._slugs = uniq
+        slugs = list(dict.fromkeys(slugs))
         # refresh markets/assets (Gamma client is sync → offload)
-        self._markets = await asyncio.to_thread(self._slugs_to_markets_sync, self._slugs)
-        self._assets_ids = [a for m in self._markets for a in json.loads(m["clobTokenIds"])]
-        self._router.ctx.update_markets(self._markets)
+        self.markets = await asyncio.to_thread(self._slugs_to_markets_sync, slugs)
+        self._assets_ids = [a for m in self.markets for a in json.loads(m["clobTokenIds"])]
+        self._router.ctx.update_markets(self.markets)
         # trigger resubscribe
         self._restart.set()
         await self._close_ws()

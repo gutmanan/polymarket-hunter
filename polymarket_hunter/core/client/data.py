@@ -5,7 +5,7 @@ import httpx
 from dotenv import load_dotenv
 from web3 import Web3
 
-from src.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
+from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
 
 load_dotenv()
 

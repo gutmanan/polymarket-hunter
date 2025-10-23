@@ -60,6 +60,6 @@ class GammaClient:
 
 if __name__ == "__main__":
     gamma = GammaClient()
-    # res = gamma.get_markets({'slug': 'will-trump-win-the-2020-us-presidential-election'})
-    res = gamma.get_market(40)
+    res = gamma.get_markets({'slug': 'will-trump-meet-with-xi-jinping-by-october-31'})
+    # res = gamma.get_market(40)
     print(res)

@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 
-from src.config.settings import settings
+from polymarket_hunter.config.settings import settings
 
 
 def setup_logger(name: str) -> logging.Logger:

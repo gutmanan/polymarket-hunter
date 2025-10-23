@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from src.core.subscription_manager import SubscriptionManager
+from polymarket_hunter.core.subscription_manager import SubscriptionManager
 
 
 class FakeStore:

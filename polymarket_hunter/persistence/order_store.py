@@ -3,12 +3,11 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import asdict, replace
-from typing import Iterable, Optional
+from typing import Optional
 
 import redis.asyncio as redis
 
-from src.persistence.datamodel.order import Order
-
+from polymarket_hunter.persistence.datamodel.order import Order
 
 ORDERS_KEYSET = "hunter:orders"
 ORDER_KEY_TPL = "hunter:order:{market_id}:{asset_id}"

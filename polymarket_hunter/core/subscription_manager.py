@@ -1,9 +1,10 @@
 import asyncio
 from typing import Set
 
-from src.core.ws_client import MarketWSClient
-from src.persistence.slug_store import RedisSlugStore
-from src.utils.logger import setup_logger
+from polymarket_hunter.config.settings import settings
+from polymarket_hunter.core.ws_client import MarketWSClient
+from polymarket_hunter.persistence.slug_store import RedisSlugStore
+from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
@@ -14,8 +15,8 @@ class SubscriptionManager:
     Loads initial slugs from Redis on start and keeps listening to PubSub events.
     """
 
-    def __init__(self, store: RedisSlugStore):
-        self._store = store
+    def __init__(self):
+        self._store = RedisSlugStore(settings.REDIS_URL)
         self._ws_client = MarketWSClient([])
         self._task: asyncio.Task | None = None
         self._events_task: asyncio.Task | None = None
@@ -34,6 +35,9 @@ class SubscriptionManager:
 
     async def update_slugs(self, new_slugs: Set[str]) -> None:
         await self._store.replace_all(new_slugs)
+
+    async def get_markets(self):
+        return self._ws_client.markets
 
     # lifecycle
     async def start(self):

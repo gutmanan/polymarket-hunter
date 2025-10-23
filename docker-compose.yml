@@ -26,9 +26,9 @@ services:
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
     volumes:
-      - .:/app
-      - ./logs:/app/logs
-    command: ["python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "${PORT:-8080}", "--reload", "--reload-dir", "src"]
+      - .:/polymarket_hunter
+      - ./logs:/polymarket_hunter/logs
+    command: ["python", "-m", "run"]
 
 volumes:
   redisinsight_data:

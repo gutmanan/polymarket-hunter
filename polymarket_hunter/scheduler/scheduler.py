@@ -9,10 +9,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
+from polymarket_hunter.core.subscription_manager import SubscriptionManager
+
 ET = ZoneInfo("America/New_York")
 ASSETS: Iterable[str] = ("bitcoin", "ethereum", "solana", "xrp")
-
-ResolveMarkets = Callable[[Sequence[str]], Awaitable[Sequence[Dict[str, Any]]]]
 
 
 # ---------- time & slug utils ----------
@@ -59,12 +59,8 @@ async def enqueue_next_hour(manager) -> None:
     slugs = [format_slug(target, a) for a in ASSETS]
     await asyncio.gather(*(manager.add_slug(s) for s in slugs))
 
-async def prune_expired(manager, resolve_markets: ResolveMarkets) -> None:
-    slugs = sorted(manager.get_slugs())
-    if not slugs:
-        return
-
-    markets = await resolve_markets(slugs)
+async def prune_expired(manager: SubscriptionManager) -> None:
+    markets = await manager.get_markets()
 
     # choose the latest endDate per slug (defensive if multiple entries per slug)
     latest_by_slug: Dict[str, datetime] = {}
@@ -85,11 +81,11 @@ async def prune_expired(manager, resolve_markets: ResolveMarkets) -> None:
 
 # ---------- scheduler ----------
 
-def build_scheduler(manager, resolve_markets: ResolveMarkets) -> AsyncIOScheduler:
+def build_scheduler(manager) -> AsyncIOScheduler:
     sched = AsyncIOScheduler(timezone=ET)
 
     async def housekeeping():
-        await prune_expired(manager, resolve_markets)
+        await prune_expired(manager)
         await add_missing_current_hour(manager)
 
     async def at_55():

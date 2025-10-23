@@ -1,15 +1,13 @@
 import json
 import threading
-import time
-from decimal import Decimal
-from typing import Dict, Any, List, Tuple, Callable, Optional, TypedDict
+from typing import Dict, Any, List, Tuple, Callable
 
 from py_clob_client.order_builder.constants import BUY, SELL
 
-from src.config.settings import settings
-from src.persistence.datamodel.order import Order
-from src.persistence.order_store import RedisOrderStore
-from src.core.handler.handlers import MessageHandler, MessageContext
+from polymarket_hunter.config.settings import settings
+from polymarket_hunter.core.handler.handlers import MessageHandler, MessageContext
+from polymarket_hunter.persistence.datamodel.order import Order
+from polymarket_hunter.persistence.order_store import RedisOrderStore
 
 TERMINAL_STATUSES = {"matched", "filled", "cancelled", "rejected", "failed"}
 NON_TERMINAL_STATUSES = {"open", "live", "unmatched", "delayed", "partial"}
@@ -23,15 +21,29 @@ class PriceChangeHandler(MessageHandler):
         self.store = RedisOrderStore(settings.REDIS_URL)
 
     def can_handle(self, msg: Dict[str, Any]) -> bool:
-        return msg.get("event_type") == "price_change"
+        return msg["event_type"] == "price_change"
 
     async def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
         self.update_prices(msg, ctx)
         market_id = msg["market"]
 
+        # factory
+        #   price changes + market data => strategy executor
+        #   should
+        #   execute
+
+        # Configuration Obj "Strategy"
+        #   criteria: Crypto
+
+
+
+
+
+
+
         for asset_id, asset in self.find_assets(market_id):
             existing_order = await self.store.get(market_id, asset_id)
-            if asset and existing_order:
+            if existing_order:
                 if float(asset[SELL]) - float(existing_order.price) < -0.1:
                     print(f"{asset["outcome"]}: {existing_order.price} -> {asset[SELL]}")
                 continue
@@ -44,8 +56,9 @@ class PriceChangeHandler(MessageHandler):
                 side=BUY,
                 price=asset[BUY],
                 size=1,
-                status="open"
+                status="initiated"
             )
+
             resp = await self.place_market_order(order)
             if resp:
                 await self.store.update(market_id, asset_id, status="placed")
