@@ -1,0 +1,72 @@
+import asyncio
+import logging
+from datetime import datetime, timezone
+from decimal import Decimal, ROUND_DOWN
+from typing import Any, Dict
+
+from py_clob_client.exceptions import PolyApiException
+from tenacity import (retry, stop_after_attempt, wait_random_exponential, retry_if_exception, retry_if_exception_type,
+                      before_sleep_log)
+
+from polymarket_hunter.constants import Q2, Q4
+from polymarket_hunter.dal.datamodel.strategy_action import Side
+from polymarket_hunter.utils.logger import setup_logger
+
+log = setup_logger(__name__)
+
+def _is_retryable_poly(e: Exception) -> bool:
+    if not isinstance(e, PolyApiException):
+        return False
+    code = getattr(e, "status_code", None)
+    # retry on infra/rate-limit; fail fast on other 4xx
+    return code is not None and (code >= 500 or code == 429)
+
+def retryable():  # common decorator config
+    return retry(
+        retry=(retry_if_exception(_is_retryable_poly) | retry_if_exception_type(asyncio.TimeoutError)),
+        wait=wait_random_exponential(multiplier=0.5, max=8),
+        stop=stop_after_attempt(5),
+        reraise=True,
+        before_sleep=before_sleep_log(log, logging.WARNING),
+    )
+
+async def _with_timeout(coro, seconds: float = 10.0):
+    async with asyncio.timeout(seconds):
+        return await coro
+
+def market_has_ended(market: Dict[str, Any]):
+    return parse_iso_utc(
+        market.get("endDate") or
+        market.get("endDateIso") or
+        market.get("end_date") or
+        market.get("end_date_iso")
+    ) <= datetime.now(timezone.utc)
+
+def parse_iso_utc(s: str | None) -> datetime | None:
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except Exception:
+        return None
+
+def q2(x): return Decimal(str(x)).quantize(Q2, rounding=ROUND_DOWN)
+
+def q4(x): return Decimal(str(x)).quantize(Q4, rounding=ROUND_DOWN)
+
+def prepare_market_amount(side: str, price: float, size: float) -> float:
+    """
+    For BUY: desired is intended USDC budget.
+    For SELL: desired is intended share quantity.
+    Returns tuple: (amount_for_api_str, shares_str, usdc_str)
+    """
+    p = Decimal(str(price))
+    if side == Side.BUY:
+        shares = q4(size)
+        usdc_effective = q2(shares * p)
+        return float(usdc_effective)
+    elif side == Side.SELL:
+        shares = q4(size)
+        return float(shares)
+    else:
+        raise ValueError("side must be 'BUY' or 'SELL'")

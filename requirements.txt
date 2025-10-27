@@ -972,7 +972,9 @@ httptools==0.7.1 \
 httpx==0.28.1 \
     --hash=sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc \
     --hash=sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad
-    # via polymarket-hunter (pyproject.toml)
+    # via
+    #   polymarket-hunter (pyproject.toml)
+    #   python-telegram-bot
 idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
     --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
@@ -1452,9 +1454,9 @@ py-builder-signing-sdk==0.0.2 \
     --hash=sha256:114b9d57bec228177d759ce15c475589f47db2252ed1fd67cac3c9b0640abe76 \
     --hash=sha256:27fa4401944220c51809f549a263c6e53b5cd981fca98eda7ef6f21944e6bf94
     # via py-clob-client
-py-clob-client==0.27.0 \
-    --hash=sha256:51ec3e026b53931f627921f582883cc23a5ca35700d77092877999c0d7d9b439 \
-    --hash=sha256:8ef9130516ccd4cf56b01b971457ba10caee58c5e5aa50086ffe315f1b93fa3b
+py-clob-client==0.28.0 \
+    --hash=sha256:33d765ed15918e2b9a2ab0619e01acdf8eb92d55a8a8ebc49ca84263827274ce \
+    --hash=sha256:b9e621f5dd0f82065e18fd12653b4432f2d7a3c136cf3e85bd8c3071ca5f396c
     # via polymarket-hunter (pyproject.toml)
 py-order-utils==0.3.2 \
     --hash=sha256:4c0ecb939f4ce0313cd8a4ca32f2ba9a72449a6fc9ee17b9ce1937f594662988 \
@@ -1658,6 +1660,10 @@ python-dotenv==1.1.1 \
     #   py-clob-client
     #   pydantic-settings
     #   uvicorn
+python-telegram-bot==22.5 \
+    --hash=sha256:4b7cd365344a7dce54312cc4520d7fa898b44d1a0e5f8c74b5bd9b540d035d16 \
+    --hash=sha256:82d4efd891d04132f308f0369f5b5929e0b96957901f58bcef43911c5f6f92f8
+    # via polymarket-hunter (pyproject.toml)
 pytokens==0.1.10 \
     --hash=sha256:c9a4bfa0be1d26aebce03e6884ba454e842f186a59ea43a6d3b25af58223c044 \
     --hash=sha256:db7b72284e480e69fb085d9f251f66b3d2df8b7166059261258ff35f50fb711b
@@ -1896,6 +1902,10 @@ starlette==0.38.6 \
     --hash=sha256:4517a1409e2e73ee4951214ba012052b9e16f60e90d73cfb06192c19203bbb05 \
     --hash=sha256:863a1588f5574e70a821dadefb41e4881ea451a47a3cd1b4df359d4ffefe5ead
     # via fastapi
+tenacity==9.1.2 \
+    --hash=sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb \
+    --hash=sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138
+    # via polymarket-hunter (pyproject.toml)
 toolz==1.1.0 \
     --hash=sha256:15ccc861ac51c53696de0a5d6d4607f99c210739caf987b5d2054f3efed429d8 \
     --hash=sha256:27a5c770d068c110d9ed9323f24f1543e83b2f300a687b7891c1a6d56b697b5b

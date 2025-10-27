@@ -1,0 +1,33 @@
+{
+  "conditionId": "0x377fe5690fa355f93b55c3d5e7434d65091800f3eb5c43bddd776f80d1974146",
+  "slug": "bitcoin-up-or-down-october-23-9am-et",
+  "question": "Bitcoin Up or Down - October 23, 9AM ET",
+  "description": "This market will resolve to \"Up\" if the close price is greater than or equal to the open price for the BTC/USDT 1 hour candle that begins on the time and date specified in the title. Otherwise, this market will resolve to \"Down\".\n\nThe resolution source for this market is information from Binance, specifically the BTC/USDT pair (https://www.binance.com/en/trade/BTC_USDT). The close \u00ab C \u00bb and open \u00ab O \u00bb displayed at the top of the graph for the relevant \"1H\" candle will be used once the data for that candle is finalized.\n\nPlease note that this market is about the price according to Binance BTC/USDT, not according to other sources or spot markets.",
+  "resolutionSource": "https://www.binance.com/en/trade/BTC_USDT",
+  "startDate": "2025-10-21T13:01:09.892133Z",
+  "endDate": "2025-10-23T14:00:00Z",
+  "liquidity": "3854.1815",
+  "outcomes": [
+    "Up",
+    "Down"
+  ],
+  "outcomePrices": {
+    "Up": {
+      "BUY": "0.91",
+      "SELL": "0.98"
+    },
+    "Down": {
+      "BUY": "0.02",
+      "SELL": "0.09"
+    }
+  },
+  "tags": [
+    "Crypto",
+    "Crypto Prices",
+    "Recurring",
+    "Hide From New",
+    "Bitcoin",
+    "1H",
+    "Up or Down"
+  ]
+}

@@ -2,14 +2,14 @@ import asyncio
 from typing import Set
 
 from polymarket_hunter.config.settings import settings
-from polymarket_hunter.core.ws_client import MarketWSClient
-from polymarket_hunter.persistence.slug_store import RedisSlugStore
+from polymarket_hunter.core.subscriber.websocket.ws_client import MarketWSClient
+from polymarket_hunter.dal.slug_store import RedisSlugStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-class SubscriptionManager:
+class SlugsSubscriber:
     """
     Coordinates slug set across Redis and the local WebSocket client.
     Loads initial slugs from Redis on start and keeps listening to PubSub events.
@@ -41,12 +41,9 @@ class SubscriptionManager:
 
     # lifecycle
     async def start(self):
-        # load initial
         slugs = await self._store.list()
         await self._apply_local_slugs(set(slugs))
-        # start ws client thread
         await self._ws_client.start()
-        # subscribe to events
         self._events_task = asyncio.create_task(self._events_loop())
 
     async def stop(self):

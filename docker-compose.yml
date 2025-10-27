@@ -26,8 +26,8 @@ services:
     ports:
       - "${PORT:-8080}:${PORT:-8080}"
     volumes:
-      - .:/polymarket_hunter
-      - ./logs:/polymarket_hunter/logs
+      - .:/app
+      - ./logs:/app/logs
     command: ["python", "-m", "run"]
 
 volumes:

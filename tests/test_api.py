@@ -1,12 +1,10 @@
 import asyncio
-import os
-import types
 import pytest
 from fastapi.testclient import TestClient
 
 from polymarket_hunter.main import create_app
 from polymarket_hunter.api import slugs_router as slugs_mod
-from polymarket_hunter.core.subscription_manager import SubscriptionManager
+from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
 
 
 class FakeStore:
@@ -39,10 +37,9 @@ class FakeStore:
 @pytest.fixture
 def app():
     # Build polymarket_hunter with injected fake manager
-    from fastapi import FastAPI
 
     fake_store = FakeStore()
-    manager = SubscriptionManager(fake_store)  # uses a real ws client but we won't start lifespan here
+    manager = SlugsSubscriber(fake_store)  # uses a real ws client but we won't start lifespan here
 
     slugs_mod.get_manager = manager
     app = create_app()

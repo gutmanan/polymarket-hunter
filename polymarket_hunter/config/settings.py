@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = Field(default="redis://redis:6379/0", env="REDIS_URL")
 
+    # Telegram
+    TELEGRAM_BOT_TOKEN: Optional[str] = Field(default=None, env="TELEGRAM_BOT_TOKEN")
+    TELEGRAM_CHAT_ID: Optional[str] = Field(default=None, env="TELEGRAM_CHAT_ID")
+
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 from typing import Any
 
 import httpx
@@ -18,11 +19,10 @@ class GammaClient:
         response = httpx.get(url)
         return response.json()
 
-    def get_markets_by_slug(self, slug: str) -> Any:
-        url = f"{self.events_endpoint}/slug/{slug}"
-        response = httpx.get(url)
-        data = response.json()
-        return data.get("markets", [])
+    def get_market_by_slug(self, slug: str) -> Any:
+        url = f"{self.markets_endpoint}/slug/{slug}"
+        response = httpx.get(url, params={"include_tag": True})
+        return response.json()
 
     def get_markets(self, querystring_params=None) -> Any:
         response = httpx.get(self.markets_endpoint, params=querystring_params)
@@ -57,6 +57,11 @@ class GammaClient:
             offset += limit
 
         return all_markets
+
+@lru_cache(maxsize=1)
+def get_gamma_client() -> GammaClient:
+    return GammaClient()
+
 
 if __name__ == "__main__":
     gamma = GammaClient()

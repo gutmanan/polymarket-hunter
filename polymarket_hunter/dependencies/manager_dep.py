@@ -2,10 +2,10 @@ from typing import Annotated, cast
 
 from fastapi import Depends, Request
 
-from polymarket_hunter.core.subscription_manager import SubscriptionManager
+from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
 
 
-def get_manager(request: Request) -> SubscriptionManager:
-    return cast(SubscriptionManager, request.app.state.manager)
+def get_manager(request: Request) -> SlugsSubscriber:
+    return cast(SlugsSubscriber, request.app.state.manager)
 
-ManagerDep = Annotated[SubscriptionManager, Depends(get_manager)]
+ManagerDep = Annotated[SlugsSubscriber, Depends(get_manager)]

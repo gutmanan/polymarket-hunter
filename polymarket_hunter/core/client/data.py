@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
@@ -38,27 +39,39 @@ class DataClient:
         NOTE: If you trade via a funder/proxy, pass the *funder* address here.
         """
         params = dict(querystring_params or {})
-        params["user"] = user if user is not None else self.address
+        addr = user if user is not None else self.address
+        # Support both param names used by different deployments
+        params["user"] = addr
+        params["wallet"] = addr
         response = httpx.get(self.positions_endpoint, params=params)
         return response.json()
 
-    def get_closed_positions(self, user: str, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
+    def get_closed_positions(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
         Closed positions (resolved/settled) with realized PnL, etc.
         """
         params = dict(querystring_params or {})
-        params["user"] = user if user is not None else self.address
+        addr = user if user is not None else self.address
+        params["user"] = addr
+        params["wallet"] = addr
+        # Tolerate varied time param names
+        if "since" in params:
+            params.setdefault("from", params["since"])  # some deployments
+            params.setdefault("start", params["since"])  # legacy
+        if "until" in params:
+            params.setdefault("to", params["until"])    # some deployments
+            params.setdefault("end", params["until"])   # legacy
         response = httpx.get(self.closed_positions_endpoint, params=params)
         return response.json()
 
-    def get_portfolio_value(self, user: str) -> Any:
+    def get_portfolio_value(self, user: str = None) -> Any:
         """
         Aggregated wallet value: totalValue, cash, unsettled, pnl, etc.
         """
         response = httpx.get(self.value_endpoint, params={"user": user if user is not None else self.address})
         return response.json()
 
-    def get_usdc_balance(self, user: str) -> float:
+    def get_usdc_balance(self, user: str = None) -> float:
         """
         USDC balance (Polygon).
         """
@@ -67,7 +80,7 @@ class DataClient:
         raw = usdc.functions.balanceOf(user if user is not None else self.address).call()
         return raw / 10 ** USDC_DECIMALS
 
-    def get_trades(self, user: str, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
+    def get_trades(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
         User trades/fills. Optional filters can include:
         - limit, cursor
@@ -92,9 +105,9 @@ class DataClient:
         ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
 
         tx = ctf.functions.splitPosition(
-            Web3.toChecksumAddress(USDC_ADDRESS),  # collateralToken
+            Web3.to_checksum_address(USDC_ADDRESS),  # collateralToken
             ZERO_B32,  # parentCollectionId (top-level)
-            Web3.toBytes(hexstr=condition_id),  # conditionId
+            Web3.to_bytes(hexstr=condition_id),  # conditionId
             partition,  # index sets (e.g., [1,2])
             int(amount_wei)  # amount (complete sets)
         ).buildTransaction({
@@ -104,7 +117,7 @@ class DataClient:
         })
         tx["gas"] = self.w3.eth.estimate_gas(tx)
         signed = self.account.sign_transaction(tx)
-        h = self.w3.eth.send_raw_transaction(signed.rawTransaction)
+        h = self.w3.eth.send_raw_transaction(signed.raw_transaction)
         return h.hex()
 
     def merge_position(self, condition_id: str, partition: list[int] = [1, 2], amount_wei: int = 0) -> str:
@@ -115,9 +128,9 @@ class DataClient:
         ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
 
         tx = ctf.functions.mergePositions(
-            Web3.toChecksumAddress(USDC_ADDRESS),  # collateralToken
+            Web3.to_checksum_address(USDC_ADDRESS),  # collateralToken
             ZERO_B32,  # parentCollectionId (top-level)
-            Web3.toBytes(hexstr=condition_id),  # conditionId
+            Web3.to_bytes(hexstr=condition_id),  # conditionId
             partition,  # index sets (e.g., [1,2])
             int(amount_wei)  # amount to merge (complete sets)
         ).buildTransaction({
@@ -127,32 +140,37 @@ class DataClient:
         })
         tx["gas"] = self.w3.eth.estimate_gas(tx)
         signed = self.account.sign_transaction(tx)
-        h = self.w3.eth.send_raw_transaction(signed.rawTransaction)
+        h = self.w3.eth.send_raw_transaction(signed.raw_transaction)
         return h.hex()
 
     def redeem_position(self, condition_id: str, partition: list[int] = [1, 2]) -> str:
         ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
 
         tx = ctf.functions.redeemPositions(
-            Web3.toChecksumAddress(USDC_ADDRESS),
+            Web3.to_checksum_address(USDC_ADDRESS),
             ZERO_B32,
-            Web3.toBytes(hexstr=condition_id),
+            Web3.to_bytes(hexstr=condition_id),
             partition
-        ).buildTransaction({
+        ).build_transaction({
             "from": self.address,
             "nonce": self.w3.eth.get_transaction_count(self.address),
             "gasPrice": self.w3.eth.gas_price,
         })
         tx["gas"] = self.w3.eth.estimate_gas(tx)
         signed = self.account.sign_transaction(tx)
-        h = self.w3.eth.send_raw_transaction(signed.rawTransaction)
+        h = self.w3.eth.send_raw_transaction(signed.raw_transaction)
         return h.hex()
+
+@lru_cache(maxsize=1)
+def get_data_client() -> DataClient:
+    return DataClient()
 
 
 if __name__ == "__main__":
     client = DataClient()
-    res = client.redeem_position(
-        "0xb4fa147809056e536d389de096d260d46956985fa12424c855f88482b2c13122",
-        [1, 2]
-    )
-    print(res)
+    # res = client.redeem_position(
+    #     "0xb4fa147809056e536d389de096d260d46956985fa12424c855f88482b2c13122",
+    #     [1, 2]
+    # )
+    for t in client.get_positions():
+        print(t)

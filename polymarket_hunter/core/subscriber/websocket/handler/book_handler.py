@@ -1,6 +1,6 @@
 from typing import Dict, Any
 
-from polymarket_hunter.core.handler.handlers import MessageHandler, MessageContext
+from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageHandler, MessageContext
 
 
 class BookHandler(MessageHandler):

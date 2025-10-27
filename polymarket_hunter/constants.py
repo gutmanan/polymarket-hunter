@@ -1,3 +1,12 @@
+from decimal import Decimal
+from zoneinfo import ZoneInfo
+
+Q2 = Decimal("0.01")
+
+Q4 = Decimal("0.0001")
+
+ET = ZoneInfo("America/New_York")
+
 ZERO_B32 = b"\x00" * 32
 
 PROXY_WALLET_FACTORY_ADDRESS = "0xaB45c5A4B0c941a2F231C04C3f49182e1A254052"

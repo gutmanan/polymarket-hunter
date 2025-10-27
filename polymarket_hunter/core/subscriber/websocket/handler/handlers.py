@@ -58,7 +58,6 @@ class MessageContext:
     def update_markets(self, markets: list[dict[str, Any]]) -> None:
         self.markets = to_map(markets, key="conditionId")
 
-
 class MessageRouter:
     """Async dispatcher for async handlers only."""
     def __init__(self, handlers: List[MessageHandler], ctx: "MessageContext", *, concurrent: bool = True):
