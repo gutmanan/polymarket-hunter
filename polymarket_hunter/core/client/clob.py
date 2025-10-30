@@ -1,7 +1,8 @@
+import asyncio
 import os
 from datetime import datetime, timezone
 from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from dotenv import load_dotenv
 from py_clob_client.client import ClobClient
@@ -11,7 +12,7 @@ from py_clob_client.exceptions import PolyApiException
 from web3 import Web3
 
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import prepare_market_amount
+from polymarket_hunter.utils.market import prepare_market_amount, _with_timeout, retryable
 
 load_dotenv()
 logger = setup_logger(__name__)
@@ -28,24 +29,18 @@ def parse_iso8601(s: str) -> datetime:
 
 
 class CLOBClient:
-    """
-    CLOB-first Polymarket client.
 
-    - Uses py-clob-client exclusively.
-    - No gamma endpoints.
-    - Provides helpers to fetch/normalize markets & events, order book, prices, and place orders.
-    """
-
-    def __init__(self, clob_host: str = os.getenv("CLOB_HOST", "https://clob.polymarket.com"), chain_id: int = POLYGON, polygon_rpc: str = os.getenv("RPC_URL"), do_approvals: bool = False) -> None:
-        self.clob_host = clob_host
-        self.exchange_address = "0x4bfb41d5b3570defd03c39a9a4d8de6bd8b8982e"
-        self.chain_id = chain_id
+    def __init__(self):
+        self.clob_host = os.getenv("CLOB_HOST", "https://clob.polymarket.com")
         self.private_key = os.getenv("PRIVATE_KEY")
+        self.polygon_rpc = os.getenv("RPC_URL")
+        self.chain_id = POLYGON
+
         if not self.private_key:
             raise RuntimeError("Missing PRIVATE_KEY in env")
 
         # web3 (for approvals/balances; PoA middleware for Polygon)
-        self.w3 = Web3(Web3.HTTPProvider(polygon_rpc))
+        self.w3 = Web3(Web3.HTTPProvider(self.polygon_rpc))
         self.account = self.w3.eth.account.from_key(self.private_key)
         self.address = self.account.address
 
@@ -53,8 +48,7 @@ class CLOBClient:
         self.client = self._init_client()
 
         # Optional approvals (off by default)
-        if do_approvals:
-            self._init_approvals()
+        # self._init_approvals()
 
     # ---------- init helpers ----------
 
@@ -80,7 +74,11 @@ class CLOBClient:
 
     # ---------- market & trades ----------
 
-    def get_market(self, condition_id):
+    @retryable()
+    async def get_market_retry(self, market_id: str):
+        return await _with_timeout(asyncio.to_thread(self.get_market, market_id), 10)
+
+    def get_market(self, condition_id: str) -> Optional[Dict[str, Any]]:
         return self.client.get_market(condition_id=condition_id)
 
     # ---------- order book & prices ----------
@@ -100,7 +98,6 @@ class CLOBClient:
             return None
 
     def get_price(self, token_id: str, side: str) -> float:
-        """Spot price helper (CLOB provides a lightweight endpoint)."""
         res = self.client.get_price(token_id, side=side)
         return float(res["price"]) if res else 0.0
 
@@ -109,9 +106,14 @@ class CLOBClient:
     def get_order(self, order_id: str):
         return self.client.get_order(order_id=order_id)
 
-    def get_orders(self, market_id: Optional[str] = None):
-        if market_id:
-            return self.client.get_orders(params=OpenOrderParams(market=market_id))
+    @retryable()
+    async def get_orders_retry(self):
+        return await _with_timeout(asyncio.to_thread(self.get_orders), 10)
+
+    def get_orders(self, market_id: Optional[str] = None, asset_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        if market_id or asset_id:
+            params = OpenOrderParams(market=market_id, asset_id=asset_id)
+            return self.client.get_orders(params=params)
         return  self.client.get_orders()
 
     def execute_limit_order(self, token_id: str, price: float, size: float, side: str, order_type: OrderType = OrderType.GTC) -> Dict[str, Any]:
@@ -145,11 +147,22 @@ class CLOBClient:
                 "error": e.error_msg
             }
 
+    @retryable()
+    async def cancel_order_retry(self, order_id: str):
+        return await _with_timeout(asyncio.to_thread(self.cancel_order, order_id), 10)
+
     def cancel_order(self, order_id: str) -> Dict[str, Any]:
         """
         Cancel an existing order by ID.
         """
-        return self.client.cancel(order_id)
+        try:
+            return self.client.cancel(order_id)
+        except PolyApiException as e:
+            logger.error(f"Unable to cancel order: {e}")
+            return {
+                "code": e.status_code,
+                "error": e.error_msg
+            }
 
 @lru_cache(maxsize=1)
 def get_clob_client() -> CLOBClient:

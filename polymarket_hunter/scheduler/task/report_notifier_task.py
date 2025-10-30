@@ -17,7 +17,7 @@ class ReportNotifierTask(AbstractTask):
         return "report-notifier"
 
     async def run(self):
-        report = self._reporter.generate_report(hours_back=24)
+        report = self._reporter.generate_report(hours_back=240)
         await self._notifier.send_message(report)
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from functools import lru_cache
 from typing import Any, Dict, Optional
@@ -7,31 +8,37 @@ from dotenv import load_dotenv
 from web3 import Web3
 
 from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
+from polymarket_hunter.utils.logger import setup_logger
+from polymarket_hunter.utils.market import retryable, _with_timeout
 
 load_dotenv()
+logger = setup_logger(__name__)
 
 
 class DataClient:
-    def __init__(
-            self,
-            polygon_rpc: str = os.getenv("RPC_URL"),
-    ):
+    def __init__(self):
         self.data_url = os.environ.get("DATA_HOST", "https://data-api.polymarket.com")
+        self.polygon_rpc = os.getenv("RPC_URL")
         self.positions_endpoint = self.data_url + "/positions"
         self.closed_positions_endpoint = self.data_url + "/closed-positions"
         self.value_endpoint = self.data_url + "/value"
         self.trades_endpoint = self.data_url + "/trades"
 
         self.private_key = os.getenv("PRIVATE_KEY")
+
         if not self.private_key:
             raise RuntimeError("Missing PRIVATE_KEY in env")
 
         # web3 (for approvals/balances; PoA middleware for Polygon)
-        self.w3 = Web3(Web3.HTTPProvider(polygon_rpc))
+        self.w3 = Web3(Web3.HTTPProvider(self.polygon_rpc))
         self.account = self.w3.eth.account.from_key(self.private_key)
         self.address = self.account.address
 
     # ---------- user-scoped reads ----------
+
+    @retryable()
+    async def get_positions_retry(self):
+        return await _with_timeout(asyncio.to_thread(self.get_positions), 10)
 
     def get_positions(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
@@ -75,7 +82,6 @@ class DataClient:
         """
         USDC balance (Polygon).
         """
-
         usdc = self.w3.eth.contract(address=USDC_ADDRESS, abi=USDC_ABI)
         raw = usdc.functions.balanceOf(user if user is not None else self.address).call()
         return raw / 10 ** USDC_DECIMALS
@@ -103,7 +109,6 @@ class DataClient:
                       e.g. 1 USDC == 1_000_000
         """
         ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
-
         tx = ctf.functions.splitPosition(
             Web3.to_checksum_address(USDC_ADDRESS),  # collateralToken
             ZERO_B32,  # parentCollectionId (top-level)
@@ -126,7 +131,6 @@ class DataClient:
         - amount_wei must be <= min(balance(YES), balance(NO)) for this condition.
         """
         ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
-
         tx = ctf.functions.mergePositions(
             Web3.to_checksum_address(USDC_ADDRESS),  # collateralToken
             ZERO_B32,  # parentCollectionId (top-level)
@@ -143,9 +147,17 @@ class DataClient:
         h = self.w3.eth.send_raw_transaction(signed.raw_transaction)
         return h.hex()
 
-    def redeem_position(self, condition_id: str, partition: list[int] = [1, 2]) -> str:
-        ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
+    @retryable()
+    async def redeem_position_retry(self, condition_id: str):
+        return await _with_timeout(asyncio.to_thread(self.redeem_position, condition_id), 10)
 
+    def redeem_position(self, condition_id: str, partition: list[int] = [1, 2]) -> str:
+        """
+        Redeem market positions.
+        - condition_id: bytes32 hex string for the condition
+        - partition: list of index sets (binary default [1,2])
+        """
+        ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
         tx = ctf.functions.redeemPositions(
             Web3.to_checksum_address(USDC_ADDRESS),
             ZERO_B32,
@@ -160,6 +172,15 @@ class DataClient:
         signed = self.account.sign_transaction(tx)
         h = self.w3.eth.send_raw_transaction(signed.raw_transaction)
         return h.hex()
+
+    async def is_market_resolved(self, condition_id: str) -> bool:
+        try:
+            ctf = self.w3.eth.contract(address=CTF_ADDRESS, abi=CTF_ABI)
+            denom = ctf.functions.payoutDenominator(condition_id).call()
+            return int(denom) > 0
+        except Exception as e:
+            logger.error("CTF check failed for %s: %s", condition_id, e)
+            return False
 
 @lru_cache(maxsize=1)
 def get_data_client() -> DataClient:

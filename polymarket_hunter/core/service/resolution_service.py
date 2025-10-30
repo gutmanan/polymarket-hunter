@@ -25,32 +25,12 @@ class ResolutionService:
 
     # ---------- utilities ----------
 
-    @retryable()
-    async def _get_orders_retry(self):
-        return await _with_timeout(asyncio.to_thread(self._clob.get_orders), 10)
-
-    @retryable()
-    async def _get_market_retry(self, market_id: str):
-        return await _with_timeout(asyncio.to_thread(self._clob.get_market, market_id), 10)
-
-    @retryable()
-    async def _cancel_order_retry(self, order_id: str):
-        return await _with_timeout(asyncio.to_thread(self._clob.cancel_order, order_id), 10)
-
-    @retryable()
-    async def _list_positions_retry(self):
-        return await _with_timeout(asyncio.to_thread(self._data.get_positions), 10)
-
-    @retryable()
-    async def _redeem_position_retry(self, condition_id: str):
-        return await _with_timeout(asyncio.to_thread(self._data.redeem_position, condition_id), 10)
-
     def _market_cache(self) -> Dict[str, Any]:
         return {}
 
     async def _get_market_cached(self, market_id: str, cache: Dict[str, Any]) -> Any:
         if market_id not in cache:
-            cache[market_id] = await self._get_market_retry(market_id)
+            cache[market_id] = await self._clob.get_market_retry(market_id)
         return cache[market_id]
 
     # ---------- public APIs ----------
@@ -67,7 +47,7 @@ class ResolutionService:
         results_fail: List[Tuple[str, Any]] = []
 
         try:
-            orders = await self._get_orders_retry()
+            orders = await self._clob.get_orders_retry()
         except Exception as e:
             return {"ok": [], "fail": [("get_orders", e)]}
 
@@ -79,7 +59,7 @@ class ResolutionService:
                 if not market_has_ended(m):
                     continue
                 try:
-                    resp = await self._cancel_order_retry(o["id"])
+                    resp = await self._clob.cancel_order_retry(o["id"])
                     results_ok.append((o["id"], resp))
                 except Exception as e:
                     results_fail.append((o["id"], e))
@@ -100,7 +80,7 @@ class ResolutionService:
         results_fail: List[Tuple[str, Any, dict]] = []
 
         try:
-            positions = await self._list_positions_retry()
+            positions = await self._data.get_positions_retry()
         except Exception as e:
             return {"ok": [], "fail": [("get_positions", e)]}
 
@@ -110,10 +90,11 @@ class ResolutionService:
                 continue
             try:
                 m = await self._get_market_cached(cid, markets)
-                if not market_has_ended(m):
+                is_resolved = await self._data.is_market_resolved(cid)
+                if not market_has_ended(m) or not is_resolved:
                     continue
                 try:
-                    resp = await self._redeem_position_retry(cid)
+                    resp = await self._data.redeem_position_retry(cid)
                     results_ok.append((cid, resp, p))
                 except Exception as e:
                     results_fail.append((cid, e, p))

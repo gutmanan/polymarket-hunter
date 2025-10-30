@@ -22,7 +22,6 @@ class OrderHandler:
         self._notifier = TelegramNotifier()
 
     async def handle(self, payload: dict[str, Any]):
-        logger.info(f"Received order: {payload}")
         if payload["action"] in {"add", "update"}:
             request = OrderRequest.model_validate_json(payload["order"])
             resp = self._clob.execute_limit_order(

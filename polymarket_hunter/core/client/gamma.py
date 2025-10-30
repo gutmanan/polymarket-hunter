@@ -1,3 +1,4 @@
+import json
 import os
 from functools import lru_cache
 from typing import Any
@@ -13,11 +14,6 @@ class GammaClient:
         self.gamma_url = os.environ.get("GAMMA_HOST", "https://api.gamma.markets")
         self.markets_endpoint = self.gamma_url + "/markets"
         self.events_endpoint = self.gamma_url + "/events"
-
-    def get_market(self, market_id: int) -> Any:
-        url = self.markets_endpoint + "/" + str(market_id)
-        response = httpx.get(url)
-        return response.json()
 
     def get_market_by_slug(self, slug: str) -> Any:
         url = f"{self.markets_endpoint}/slug/{slug}"
@@ -64,7 +60,7 @@ def get_gamma_client() -> GammaClient:
 
 
 if __name__ == "__main__":
-    gamma = GammaClient()
-    res = gamma.get_markets({'slug': 'will-trump-meet-with-xi-jinping-by-october-31'})
+    gamma = get_gamma_client()
+    res = gamma.get_market_by_slug("bitcoin-up-or-down-october-27-12pm-et")
     # res = gamma.get_market(40)
-    print(res)
+    print(json.dumps(res))

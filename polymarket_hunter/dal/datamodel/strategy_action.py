@@ -33,5 +33,5 @@ class StrategyAction(BaseModel):
     take_profit: Optional[float] = 1
     max_spread: Optional[float] = 0.1
     order_type: Optional[OrderType] = OrderType.MARKET
-    time_in_force: Optional[TIF] = TIF.FAK
+    time_in_force: Optional[TIF] = TIF.GTC
     cancel_on_conflict: bool = True
