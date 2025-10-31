@@ -9,7 +9,7 @@ from web3 import Web3
 
 from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import retryable, _with_timeout
+from polymarket_hunter.utils.market import retryable, with_timeout
 
 load_dotenv()
 logger = setup_logger(__name__)
@@ -37,8 +37,8 @@ class DataClient:
     # ---------- user-scoped reads ----------
 
     @retryable()
-    async def get_positions_retry(self):
-        return await _with_timeout(asyncio.to_thread(self.get_positions), 10)
+    async def get_positions_retry(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None):
+        return await with_timeout(asyncio.to_thread(self.get_positions, user, querystring_params), 10)
 
     def get_positions(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
@@ -149,7 +149,7 @@ class DataClient:
 
     @retryable()
     async def redeem_position_retry(self, condition_id: str):
-        return await _with_timeout(asyncio.to_thread(self.redeem_position, condition_id), 10)
+        return await with_timeout(asyncio.to_thread(self.redeem_position, condition_id), 10)
 
     def redeem_position(self, condition_id: str, partition: list[int] = [1, 2]) -> str:
         """

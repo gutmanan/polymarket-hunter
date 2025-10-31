@@ -5,8 +5,9 @@ from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
-from polymarket_hunter.dal.datamodel.strategy_action import OrderType
+from polymarket_hunter.dal.datamodel.strategy_action import OrderType, Side
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
+from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -18,6 +19,7 @@ class OrderService:
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
+        self._store = RedisOrderRequestStore()
         self._notifier = RedisNotificationStore()
 
     async def execute_order(self, payload: dict[str, Any]):
@@ -26,30 +28,28 @@ class OrderService:
             if request.action.order_type == OrderType.MARKET:
                 resp = self._clob.execute_market_order(
                     token_id=request.asset_id,
-                    price=request.price,
-                    size=request.action.size,
-                    side=request.action.side,
-                    tif=request.action.time_in_force
+                    size=request.size,
+                    side=request.side,
+                    tif=request.action.time_in_force if request.action is not None else None,
                 )
             elif request.action.order_type == OrderType.LIMIT:
                 resp = self._clob.execute_limit_order(
                     token_id=request.asset_id,
                     price=request.price,
-                    size=request.action.size,
-                    side=request.action.side,
-                    tif=request.action.time_in_force
+                    size=request.size,
+                    side=request.side,
+                    tif=request.action.time_in_force if request.action is not None else None,
                 )
             else:
                 raise NotImplementedError
+
+            if request.side == Side.SELL and bool(resp.get("success")):
+                await self._store.remove(request.market_id, request.asset_id)
 
             msg = self._format_order_message(resp, request)
             await self._notifier.send_message(msg)
 
     # ---------- Helpers ----------
-
-    @staticmethod
-    def _short(h: str, n: int = 10) -> str:
-        return f"{h[:n]}..." if h and len(h) > n else h or ""
 
     @staticmethod
     def _as_dec(x: Any) -> Decimal:
@@ -72,30 +72,25 @@ class OrderService:
         if tx_hashes:
             tx_link = f"<a href='https://polygonscan.com/tx/{tx_hashes[0]}'>View Transaction</a>"
 
-        # Amounts (as provided by API — semantics: making/taking are strings)
         making = self._as_dec(resp.get("makingAmount", "0"))
         taking = self._as_dec(resp.get("takingAmount", "0"))
 
-        # From request (side, size, price, tif)
-        # Try to get clean side label
-        side = getattr(request.action.side, "name", str(request.action.side)).upper()
-        size = request.action.size
         price = request.price
-        tif = str(getattr(request.action, "time_in_force", "")) or str(getattr(request.action, "timeInForce", ""))
+        side = request.side
+        size = request.size
+        tif = request.action.time_in_force if request.action is not None else None
 
         # Optional enrichers (if present on your model)
-        market = getattr(getattr(request, "context", None), "slug", None) or getattr(request, "market_id", None)
+        context = getattr(request, "context", None)
+        market = getattr(context, "slug", None) or getattr(request, "market_id", None)
         outcome = getattr(request.action, "outcome", None)
 
         # Decorative header
         header = "✅ <b>Order Placed</b>"
-        emoji = "✅"
         if not success:
             header = "❌ <b>Order Failed</b>"
-            emoji = "❌"
         elif status in {"partial", "partially_filled", "open", "pending", "booked"}:
             header = "⏳ <b>Order Pending</b>"
-            emoji = "⏳"
 
         # Build the main lines
         title_line = ""
@@ -120,7 +115,7 @@ class OrderService:
         amounts_line = "\n".join(amounts)
 
         # order id / tx
-        id_line = f"🧾 <b>Order ID:</b> <code>{self._short(order_id)}</code>" if order_id else ""
+        id_line = f"🧾 <b>Order ID:</b> <code>{order_id}</code>" if order_id else ""
         tx_line = f"🔗 {tx_link}" if tx_link else ""
 
         # Failure case
@@ -136,7 +131,6 @@ class OrderService:
 
         # Pending / Partial
         if status in {"partial", "partially_filled", "open", "pending", "booked"}:
-            # If you know requested notional, you could compute fill %, but we keep it generic here.
             return (
                 f"{header}\n"
                 f"{title_line}"

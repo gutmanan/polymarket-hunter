@@ -7,17 +7,12 @@ from py_clob_client.order_builder.constants import BUY, SELL
 from polymarket_hunter.core.service.resolution_service import ResolutionService
 from polymarket_hunter.core.strategy.strategy_evaluator import MarketContext
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageHandler, MessageContext
-from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
-
-TERMINAL_STATUSES = {"matched", "filled", "cancelled", "rejected", "failed"}
-NON_TERMINAL_STATUSES = {"open", "live", "unmatched", "delayed", "partial"}
 
 
 class PriceChangeHandler(MessageHandler):
     def __init__(self):
         # price_map[market_id][asset_id] -> {"outcome": str, "buy": float, "sell": float}
         self.price_map: Dict[str, Dict[str, Dict[str, Any]]] = {}
-        self.store = RedisOrderRequestStore()
         self._resolver = ResolutionService()
         self._lock = threading.Lock()
 
@@ -53,18 +48,19 @@ class PriceChangeHandler(MessageHandler):
 
     def build_context(self, market: dict[str, Any]):
         return MarketContext(
-            conditionId=market["conditionId"],
+            condition_id=market["conditionId"],
             slug=market["slug"],
             question=market["question"],
             description=market["description"],
-            resolutionSource=market["resolutionSource"],
-            startDate=market["startDate"],
-            endDate=market["endDate"],
+            resolution_source=market["resolutionSource"],
+            start_date=market["startDate"],
+            end_date=market["endDate"],
             liquidity=market["liquidity"],
+            order_min_size=market["orderMinSize"],
             outcomes=json.loads(market["outcomes"]),
-            clobTokenIds=json.loads(market["clobTokenIds"]),
-            outcomePrices=self.get_outcome_prices(market["conditionId"]),
-            outcomeAssets=self.get_outcome_assets(market["conditionId"]),
+            clob_token_ids=json.loads(market["clobTokenIds"]),
+            outcome_prices=self.get_outcome_prices(market["conditionId"]),
+            outcome_assets=self.get_outcome_assets(market["conditionId"]),
             tags=[t["label"] for t in market["tags"]]
         )
 

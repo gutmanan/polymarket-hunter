@@ -21,17 +21,15 @@ class TIF(StrEnum):
     GTD = "GTD"
     FAK = "FAK"
 
-
-
 class StrategyAction(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
     side: Side
-    outcome: str
     size: float
+    outcome: str
     slippage: Optional[float] = 0.05
     stop_loss: Optional[float] = 1
     take_profit: Optional[float] = 1
     max_spread: Optional[float] = 0.1
-    order_type: Optional[OrderType] = OrderType.MARKET
-    time_in_force: Optional[TIF] = TIF.GTC
+    order_type: Optional[OrderType] = OrderType.LIMIT
+    time_in_force: Optional[TIF] = TIF.GTD
     cancel_on_conflict: bool = True

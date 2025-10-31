@@ -8,6 +8,7 @@ from polymarket_hunter.api.slugs_router import router as slugs_router
 from polymarket_hunter.api.webhook_router import router as webhook_router
 from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.service.scheduler_service import SchedulerService
+from polymarket_hunter.core.subscriber.notification_subscriber import NotificationsSubscriber
 from polymarket_hunter.core.subscriber.order_subscriber import OrdersSubscriber
 from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
 from polymarket_hunter.utils.logger import setup_logger
@@ -23,6 +24,9 @@ async def lifespan(app: FastAPI):
     orders_subscriber = OrdersSubscriber()
     await orders_subscriber.start()
 
+    notification_subscriber = NotificationsSubscriber()
+    await notification_subscriber.start()
+
     app.state.slugs_subscriber = slugs_subscriber
     app.state.orders_subscriber = orders_subscriber
 
@@ -37,6 +41,7 @@ async def lifespan(app: FastAPI):
     finally:
         await slugs_subscriber.stop()
         await orders_subscriber.stop()
+        await notification_subscriber.stop()
         scheduler.stop()
 
 

@@ -1,7 +1,6 @@
 import asyncio
 import os
 from datetime import datetime, timezone
-from decimal import Decimal
 from functools import lru_cache
 from typing import Any, Dict, Optional, List
 
@@ -14,7 +13,7 @@ from web3 import Web3
 
 from polymarket_hunter.dal.datamodel.strategy_action import TIF
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import prepare_market_amount, _with_timeout, retryable
+from polymarket_hunter.utils.market import with_timeout, retryable
 
 load_dotenv()
 logger = setup_logger(__name__)
@@ -78,7 +77,7 @@ class CLOBClient:
 
     @retryable()
     async def get_market_retry(self, market_id: str):
-        return await _with_timeout(asyncio.to_thread(self.get_market, market_id), 10)
+        return await with_timeout(asyncio.to_thread(self.get_market, market_id), 10)
 
     def get_market(self, condition_id: str) -> Optional[Dict[str, Any]]:
         return self.client.get_market(condition_id=condition_id)
@@ -109,8 +108,8 @@ class CLOBClient:
         return self.client.get_order(order_id=order_id)
 
     @retryable()
-    async def get_orders_retry(self):
-        return await _with_timeout(asyncio.to_thread(self.get_orders), 10)
+    async def get_orders_retry(self, market_id: Optional[str] = None, asset_id: Optional[str] = None):
+        return await with_timeout(asyncio.to_thread(self.get_orders, market_id, asset_id), 10)
 
     def get_orders(self, market_id: Optional[str] = None, asset_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if market_id or asset_id:
@@ -133,14 +132,13 @@ class CLOBClient:
                 "error": e.error_msg
             }
 
-    def execute_market_order(self, token_id: str, price: float, size: float, side: str, tif: TIF) -> Dict[str, Any]:
+    def execute_market_order(self, token_id: str, size: float, side: str, tif: TIF) -> Dict[str, Any]:
         """
         Market order: amount is the notional size in quote units the CLOB expects.
         """
         try:
-            amount = prepare_market_amount(side=side, size=size, price=price)
-            print(amount)
-            args = MarketOrderArgs(token_id=token_id, amount=amount, side=side, order_type=OrderType(str(tif)))
+            args = MarketOrderArgs(token_id=token_id, amount=size, side=side, order_type=OrderType(str(tif)))
+            logger.info(f"Market order args: {args}")
             signed = self.client.create_market_order(args)
             return self.client.post_order(signed)
         except PolyApiException as e:
@@ -152,7 +150,7 @@ class CLOBClient:
 
     @retryable()
     async def cancel_order_retry(self, order_id: str):
-        return await _with_timeout(asyncio.to_thread(self.cancel_order, order_id), 10)
+        return await with_timeout(asyncio.to_thread(self.cancel_order, order_id), 10)
 
     def cancel_order(self, order_id: str) -> Dict[str, Any]:
         """
@@ -173,6 +171,5 @@ def get_clob_client() -> CLOBClient:
 
 if __name__ == "__main__":
     client = get_clob_client()
-    # print(client.get_order("0xf8001ae232c93ab93f21503bf0efe6a670f176de8cf27a2a46e715a51629816e"))
     for o in client.get_orders():
         print(o)

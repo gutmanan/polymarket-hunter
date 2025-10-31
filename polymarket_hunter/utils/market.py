@@ -12,9 +12,9 @@ from polymarket_hunter.constants import Q2, Q4
 from polymarket_hunter.dal.datamodel.strategy_action import Side
 from polymarket_hunter.utils.logger import setup_logger
 
-log = setup_logger(__name__)
+logger = setup_logger(__name__)
 
-def _is_retryable_poly(e: Exception) -> bool:
+def _is_retryable_poly(e: BaseException) -> bool:
     if not isinstance(e, PolyApiException):
         return False
     code = getattr(e, "status_code", None)
@@ -27,10 +27,10 @@ def retryable():  # common decorator config
         wait=wait_random_exponential(multiplier=0.5, max=8),
         stop=stop_after_attempt(5),
         reraise=True,
-        before_sleep=before_sleep_log(log, logging.WARNING),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
-async def _with_timeout(coro, seconds: float = 10.0):
+async def with_timeout(coro, seconds: float = 10.0):
     async with asyncio.timeout(seconds):
         return await coro
 
@@ -72,7 +72,6 @@ def prepare_market_amount(side: str, price: float, size: float) -> float:
         return to_float(shares)
     else:
         raise ValueError("side must be 'BUY' or 'SELL'")
-
 
 def to_float(d: Decimal) -> float:
     return float(format(d, "f"))

@@ -7,16 +7,17 @@ from pydantic.config import ConfigDict
 
 class MarketContext(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
-    conditionId: str
+    condition_id: str
     slug: str
     question: str
     description: str
-    resolutionSource: Optional[str]
-    startDate: Optional[datetime]
-    endDate: Optional[datetime]
+    resolution_source: Optional[str]
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
     liquidity: float
+    order_min_size: float
     outcomes: list[str]
-    clobTokenIds: list[str]
-    outcomePrices: dict[str, dict[str, Any]]
-    outcomeAssets: dict[str, str]
+    clob_token_ids: list[str]
+    outcome_prices: dict[str, dict[str, Any]]
+    outcome_assets: dict[str, str]
     tags: list[str]

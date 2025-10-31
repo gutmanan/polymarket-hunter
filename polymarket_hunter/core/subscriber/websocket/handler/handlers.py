@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
 from typing import Protocol, Any, Dict, List, Optional, Iterable
 
 from polymarket_hunter.core.client.clob import CLOBClient
@@ -40,38 +39,14 @@ class MessageContext:
         self.markets = {}
         self.update_markets(markets)
 
-    def get_market_resolution_ts(self, condition_id: str) -> float:
-        """
-        Return the UNIX timestamp (seconds) for the market’s endDate.
-        Raises KeyError if condition_id is unknown or endDate missing.
-        """
-        market = self.markets.get(condition_id)
-        if not market:
-            raise KeyError(f"Unknown condition_id: {condition_id}")
-
-        end_date = market.get("endDate")
-        if not end_date:
-            raise KeyError(f"Market {condition_id} missing endDate")
-
-        # Parse ISO string like '2025-10-14T12:00:00Z' into UTC seconds
-        if end_date.endswith("Z"):
-            end_date = end_date[:-1] + "+00:00"
-        dt = datetime.fromisoformat(end_date).astimezone(timezone.utc)
-        return dt.timestamp()
-
     def update_markets(self, markets: list[dict[str, Any]]) -> None:
         self.markets = to_map(markets, key="conditionId")
 
 
 class MessageRouter:
 
-    def __init__(
-            self,
-            handlers: List[MessageHandler],
-            ctx: "MessageContext",
-            *,
-            per_handler_timeout_ms: Optional[int] = None,
-    ) -> None:
+    def __init__(self, market_id: str, handlers: List[MessageHandler], ctx: "MessageContext", *, per_handler_timeout_ms: Optional[int] = None) -> None:
+        self.market_id = market_id
         self.handlers = handlers
         self.ctx = ctx
         self._timeout = (per_handler_timeout_ms / 1000) if per_handler_timeout_ms else None

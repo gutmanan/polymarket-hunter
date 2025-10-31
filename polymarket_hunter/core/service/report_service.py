@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, getcontext
 from typing import Dict, List, Tuple, Optional, Any
@@ -8,10 +9,11 @@ from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.fill import Fill
+from polymarket_hunter.utils.logger import setup_logger
 from polymarket_hunter.utils.market import market_has_ended, parse_iso_utc, q2
 
 getcontext().prec = 28
-
+logger = setup_logger(__name__)
 
 class ReportService:
     def __init__(self):
@@ -66,7 +68,7 @@ class ReportService:
                         )
                     )
                 except Exception as e:
-                    print(f"ERROR parsing fill row: {r}. Skipping. Error: {e}")
+                    logger.error(f"ERROR parsing fill row: {r}. Skipping. Error: {e}")
             return out
 
         def page(before_val: int) -> List[Fill]:
@@ -118,7 +120,7 @@ class ReportService:
                     total_realized_pnl += Decimal(str(pnl_str))
             return total_realized_pnl
         except Exception as e:
-            print(f"WARNING: Could not fetch closed positions PnL: {e}. Defaulting to 0.")
+            logger.warning(f"WARNING: Could not fetch closed positions PnL: {e}. Defaulting to 0.")
             return Decimal("0")
 
     # ---------- Marking ----------
@@ -132,7 +134,8 @@ class ReportService:
         is_end_dt: bool = True,
     ) -> Decimal:
         m = self._get_market(market_id)
-        if m and market_has_ended(m):
+        is_resolved = asyncio.run(self.data.is_market_resolved(market_id))
+        if m and (market_has_ended(m) or is_resolved):
             try:
                 winning = self._is_asset_winning(m, asset_id)
                 return Decimal("1") if winning else Decimal("0")

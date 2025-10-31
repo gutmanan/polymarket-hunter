@@ -8,7 +8,7 @@ strategies = [
         rules=[
             Rule(
                 name="Buy Up",
-                condition_fn=lambda context: 0.75 < context.outcomePrices["Up"]["BUY"] < 0.9,
+                condition_fn=lambda context: 0.75 < context.outcome_prices["Up"]["BUY"] < 0.9,
                 action=StrategyAction(
                     side=Side.BUY,
                     size=5,
@@ -18,7 +18,7 @@ strategies = [
             ),
             Rule(
                 name="Buy Down",
-                condition_fn=lambda context: 0.75 < context.outcomePrices["Down"]["BUY"] < 0.9,
+                condition_fn=lambda context: 0.75 < context.outcome_prices["Down"]["BUY"] < 0.9,
                 action=StrategyAction(
                     side=Side.BUY,
                     size=5,

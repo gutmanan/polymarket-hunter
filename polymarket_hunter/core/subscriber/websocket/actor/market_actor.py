@@ -16,8 +16,8 @@ class MarketActor:
         self,
         market_id: str,
         router: MessageRouter,
-        eval_interval_ms: int = 40,
-        max_mailbox: int = 256,
+        eval_interval_ms: int = 100,
+        max_mailbox: int = 512,
     ) -> None:
         self.market_id = market_id
         self.router = router

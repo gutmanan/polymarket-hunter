@@ -1,7 +1,6 @@
 import asyncio
 from typing import Optional
 
-from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.notifier.telegram_notifier import TelegramNotifier
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.utils.logger import setup_logger
@@ -10,7 +9,7 @@ logger = setup_logger(__name__)
 
 class NotificationsSubscriber:
     def __init__(self):
-        self._store = RedisNotificationStore(settings.REDIS_URL)
+        self._store = RedisNotificationStore()
         self._telegram_notifier = TelegramNotifier()
         self._task: Optional[asyncio.Task] = None
 
@@ -30,7 +29,6 @@ class NotificationsSubscriber:
         while True:
             try:
                 async for payload in self._store.subscribe_events():
-                    print(payload)
                     if payload.medium == "telegram":
                         await self._telegram_notifier.send_message(payload)
                 backoff = 0.5  # reset if stream ended cleanly

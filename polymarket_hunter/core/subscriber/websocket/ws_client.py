@@ -15,12 +15,7 @@ from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager
 from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
-from polymarket_hunter.core.subscriber.websocket.handler.book_handler import BookHandler
-from polymarket_hunter.core.subscriber.websocket.handler.handlers import (
-    MessageContext,  # async router
-)
-from polymarket_hunter.core.subscriber.websocket.handler.price_handler import PriceChangeHandler
-from polymarket_hunter.core.subscriber.websocket.handler.trade_handler import TradeHandler
+from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageContext
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -28,15 +23,13 @@ logger = setup_logger(__name__)
 
 class MarketWSClient:
 
-    def __init__(self, slugs: List[str]):
+    def __init__(self):
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
+        self._assets_ids = []
 
-        self.markets = self._slugs_to_markets_sync(slugs)
-        self._assets_ids = [a for m in self.markets for a in json.loads(m["clobTokenIds"])]
-
-        self.handlers = [PriceChangeHandler(), BookHandler(), TradeHandler()]
+        self.markets = []
         self.ctx = MessageContext(
             logger=logger,
             markets=self.markets,
@@ -45,7 +38,7 @@ class MarketWSClient:
             data_client=self._data,
         )
 
-        self._actors = ActorManager(self.handlers, self.ctx)
+        self._actors = ActorManager(self.ctx)
 
         self._task: asyncio.Task | None = None
         self._stop = asyncio.Event()
@@ -77,7 +70,9 @@ class MarketWSClient:
         """
         async with self._update_lock:
             self.markets = await asyncio.to_thread(self._slugs_to_markets_sync, slugs)
-            self._assets_ids = [a for m in self.markets for a in json.loads(m["clobTokenIds"])]
+            if not self.markets:
+                return
+            self._assets_ids = [a for m in self.markets for a in json.loads(m.get("clobTokenIds") or [])]
             self.ctx.update_markets(self.markets)
             self._restart.set()
             if self._ws:

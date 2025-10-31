@@ -12,7 +12,7 @@ class SlugsSubscriber:
 
     def __init__(self):
         self._store = RedisSlugStore()
-        self._ws_client = MarketWSClient([])
+        self._ws_client = MarketWSClient()
         self._task: asyncio.Task | None = None
         self._events_task: asyncio.Task | None = None
         self._lock = asyncio.Lock()

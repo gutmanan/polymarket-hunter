@@ -54,7 +54,8 @@ class ResolutionService:
                 continue
             try:
                 m = await self._get_market_cached(o["market"], markets)
-                if not market_has_ended(m):
+                is_resolved = await self._data.is_market_resolved(o["market"])
+                if not market_has_ended(m) or not is_resolved:
                     continue
                 try:
                     resp = await self._clob.cancel_order_retry(o["id"])
@@ -102,8 +103,8 @@ class ResolutionService:
         return {"ok": results_ok, "fail": results_fail}
 
     async def place_order(self, context: MarketContext):
-        for outcome, asset_id in context.outcomeAssets.items():
-            enter_request = await self._get_enter_request(context.conditionId, asset_id)
+        for outcome, asset_id in context.outcome_assets.items():
+            enter_request = await self._get_enter_request(context.condition_id, asset_id)
             request = await self._evaluator.should_exit(context, outcome, enter_request) if enter_request else await self._evaluator.should_enter(context, outcome)
             if request:
                 await self._store.add(request)
