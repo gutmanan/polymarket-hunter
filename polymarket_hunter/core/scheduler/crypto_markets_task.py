@@ -3,11 +3,11 @@ from datetime import datetime, timedelta
 from typing import Iterable
 
 from polymarket_hunter.constants import ET
-from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
-from polymarket_hunter.scheduler.task.tasks import AbstractTask
+from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
 from polymarket_hunter.utils.market import market_has_ended
 
 ASSETS: Iterable[str] = ("bitcoin", "ethereum", "solana", "xrp")
+
 
 # ---------- time & slug utils ----------
 
@@ -35,35 +35,31 @@ def slugs_for_hour(hour_et: datetime) -> set[str]:
     return {format_slug(hour_et, a) for a in ASSETS}
 
 
-class CryptoMarketsTask(AbstractTask):
-
-    def __init__(self, manager: SlugsSubscriber):
-        self._manager = manager
+class CryptoMarketsTask(BaseIntervalTask):
+    def __init__(self, slugs_subscriber):
+        super().__init__("_crypto_markets", minutes=1, misfire_grace_time=120)
+        self._slugs_subscriber = slugs_subscriber
 
     async def add_missing_current_hour(self) -> None:
         want = slugs_for_hour(start_of_hour(now_et()))
-        have = set(self._manager.get_slugs())
+        have = set(self._slugs_subscriber.get_slugs())
         missing = want - have
         if missing:
-            await asyncio.gather(*(self._manager.add_slug(s) for s in sorted(missing)))
+            await asyncio.gather(*(self._slugs_subscriber.add_slug(s) for s in sorted(missing)))
 
     async def enqueue_next_hour(self) -> None:
         target = next_hour(now_et())
         want = set([format_slug(target, a) for a in ASSETS])
-        have = set(self._manager.get_slugs())
+        have = set(self._slugs_subscriber.get_slugs())
         missing = want - have
         if missing:
-            await asyncio.gather(*(self._manager.add_slug(s) for s in sorted(missing)))
+            await asyncio.gather(*(self._slugs_subscriber.add_slug(s) for s in sorted(missing)))
 
     async def prune_expired(self) -> None:
-        markets = await self._manager.get_markets()
+        markets = await self._slugs_subscriber.get_markets()
         expired_slugs = [m["slug"] for m in markets if m.get("slug") and market_has_ended(m)]
         if expired_slugs:
-            await asyncio.gather(*(self._manager.remove_slug(s) for s in expired_slugs))
-
-    @property
-    def id(self) -> str:
-        return "crypto-markets-watcher"
+            await asyncio.gather(*(self._slugs_subscriber.remove_slug(s) for s in expired_slugs))
 
     async def run(self):
         await self.add_missing_current_hour()

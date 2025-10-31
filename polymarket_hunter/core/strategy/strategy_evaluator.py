@@ -7,7 +7,7 @@ from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.datamodel.strategy import Rule, Strategy
 from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
-from polymarket_hunter.notifier.telegram_notifier import TelegramNotifier
+from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -17,7 +17,7 @@ class StrategyEvaluator:
     def __init__(self):
         self._clob = get_clob_client()
         self._data = get_data_client()
-        self._notifier = TelegramNotifier()
+        self._notifier = RedisNotificationStore()
 
     def _get_active_position(self, market_id: str, asset_id: str) -> Optional[Dict[str, Any]]:
         positions = self._data.get_positions(querystring_params={"market": market_id})

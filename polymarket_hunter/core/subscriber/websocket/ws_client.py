@@ -13,9 +13,10 @@ from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
+from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager
+from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
 from polymarket_hunter.core.subscriber.websocket.handler.book_handler import BookHandler
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import (
-    MessageRouter,
     MessageContext,  # async router
 )
 from polymarket_hunter.core.subscriber.websocket.handler.price_handler import PriceChangeHandler
@@ -35,15 +36,16 @@ class MarketWSClient:
         self.markets = self._slugs_to_markets_sync(slugs)
         self._assets_ids = [a for m in self.markets for a in json.loads(m["clobTokenIds"])]
 
-        ctx = MessageContext(
+        self.handlers = [PriceChangeHandler(), BookHandler(), TradeHandler()]
+        self.ctx = MessageContext(
             logger=logger,
             markets=self.markets,
             gamma_client=self._gamma,
             clob_client=self._clob,
             data_client=self._data,
         )
-        handlers = [PriceChangeHandler(), BookHandler(), TradeHandler()]
-        self._router = MessageRouter(handlers, ctx, concurrent=True)
+
+        self._actors = ActorManager(self.handlers, self.ctx)
 
         self._task: asyncio.Task | None = None
         self._stop = asyncio.Event()
@@ -67,16 +69,16 @@ class MarketWSClient:
             with contextlib.suppress(asyncio.CancelledError):
                 await self._task
         await self._close_ws()
+        await self._actors.stop_all()
 
     async def update_slugs(self, slugs: List[str]) -> None:
         """
         Update the tracked slugs -> resolve to markets -> trigger resubscribe.
-        Keeps the same internal logic (gamma.get_market_by_slug + clobTokenIds).
         """
         async with self._update_lock:
             self.markets = await asyncio.to_thread(self._slugs_to_markets_sync, slugs)
             self._assets_ids = [a for m in self.markets for a in json.loads(m["clobTokenIds"])]
-            self._router.ctx.update_markets(self.markets)
+            self.ctx.update_markets(self.markets)
             self._restart.set()
             if self._ws:
                 with contextlib.suppress(Exception):
@@ -89,7 +91,6 @@ class MarketWSClient:
         while not self._stop.is_set():
             try:
                 await self._connect_and_pump()
-                # Only clear restart after a clean cycle
                 self._restart.clear()
                 backoff = 1.0
             except asyncio.CancelledError:
@@ -104,10 +105,11 @@ class MarketWSClient:
             settings.POLYMARKET_WS_URL,
             ping_interval=20,
             ping_timeout=30,
-            max_queue=1000,     # backpressure guard on incoming frames
+            max_queue=1000,     # guard on incoming frames
         ) as ws:
             self._ws = ws
             await self._send_subscribe(ws)
+
             while True:
                 recv_task = asyncio.create_task(ws.recv(), name="ws-recv")
                 stop_task = asyncio.create_task(self._stop.wait(), name="ws-stop")
@@ -117,25 +119,20 @@ class MarketWSClient:
                     {recv_task, stop_task, restart_task},
                     return_when=asyncio.FIRST_COMPLETED,
                 )
-
                 for t in pending:
                     t.cancel()
 
                 if stop_task in done and self._stop.is_set():
                     break
-
                 if restart_task in done and self._restart.is_set():
                     break
 
                 if recv_task in done:
-                    try:
-                        message = recv_task.result()
-                    except Exception as e:
-                        raise e
-
+                    message = recv_task.result()
                     if message == "PONG":
                         continue
-                    await self._handle_message(message)
+                    # Fast, non-blocking: parse + enqueue to actors
+                    self._ingest_message(message)
 
         self._ws = None
 
@@ -147,21 +144,28 @@ class MarketWSClient:
         except Exception as e:
             logger.warning("Failed to send subscribe: %s", e)
 
-    async def _handle_message(self, message: str) -> None:
+    # -------- ingestion → actors --------
+
+    def _ingest_message(self, raw: str) -> None:
         try:
-            payload = json.loads(message)
+            payload = json.loads(raw)
         except json.JSONDecodeError:
-            logger.debug("Non-JSON message: %s", message[:180])
+            logger.debug("Non-JSON message: %s", raw[:180])
             return
 
         if isinstance(payload, list):
             for item in payload:
                 if isinstance(item, dict):
-                    await self._router.dispatch(item)
+                    self._route_to_actor(item)
             return
 
         if isinstance(payload, dict):
-            await self._router.dispatch(payload)
+            self._route_to_actor(payload)
+
+    def _route_to_actor(self, item: dict) -> None:
+        market, timestamp, event_type = item.get("market"), item.get("timestamp"), item.get("event_type")
+        env = MsgEnvelope(market=market, timestamp=timestamp, event_type=event_type, payload=item)
+        self._actors.get(market).post(env)
 
     async def _close_ws(self) -> None:
         if self._ws:

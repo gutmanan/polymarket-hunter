@@ -1,6 +1,7 @@
 import asyncio
 import os
 from datetime import datetime, timezone
+from decimal import Decimal
 from functools import lru_cache
 from typing import Any, Dict, Optional, List
 
@@ -11,6 +12,7 @@ from py_clob_client.constants import POLYGON
 from py_clob_client.exceptions import PolyApiException
 from web3 import Web3
 
+from polymarket_hunter.dal.datamodel.strategy_action import TIF
 from polymarket_hunter.utils.logger import setup_logger
 from polymarket_hunter.utils.market import prepare_market_amount, _with_timeout, retryable
 
@@ -116,14 +118,14 @@ class CLOBClient:
             return self.client.get_orders(params=params)
         return  self.client.get_orders()
 
-    def execute_limit_order(self, token_id: str, price: float, size: float, side: str, order_type: OrderType = OrderType.GTC) -> Dict[str, Any]:
+    def execute_limit_order(self, token_id: str, price: float, size: float, side: str, tif: TIF) -> Dict[str, Any]:
         """
         CLOB-native limit order. side: 0=BUY, 1=SELL (use py_clob_client.order_builder.constants BUY/SELL)
         """
         try:
             args = OrderArgs(token_id=token_id, price=price, size=size, side=side)
             signed = self.client.create_order(args)
-            return self.client.post_order(signed, OrderType.GTC)
+            return self.client.post_order(signed, orderType=OrderType(str(tif)))
         except PolyApiException as e:
             logger.error(f"Unable to place limit order: {e}",)
             return {
@@ -131,13 +133,14 @@ class CLOBClient:
                 "error": e.error_msg
             }
 
-    def execute_market_order(self, token_id: str, price: float, size: float, side: str, order_type: OrderType = OrderType.FOK) -> Dict[str, Any]:
+    def execute_market_order(self, token_id: str, price: float, size: float, side: str, tif: TIF) -> Dict[str, Any]:
         """
         Market order: amount is the notional size in quote units the CLOB expects.
         """
         try:
             amount = prepare_market_amount(side=side, size=size, price=price)
-            args = MarketOrderArgs(token_id=token_id, amount=amount, side=side, order_type=order_type)
+            print(amount)
+            args = MarketOrderArgs(token_id=token_id, amount=amount, side=side, order_type=OrderType(str(tif)))
             signed = self.client.create_market_order(args)
             return self.client.post_order(signed)
         except PolyApiException as e:

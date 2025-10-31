@@ -1,36 +1,46 @@
 from decimal import Decimal
 from typing import Any
 
-from py_clob_client.clob_types import OrderType
-
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
-from polymarket_hunter.notifier.telegram_notifier import TelegramNotifier
+from polymarket_hunter.dal.datamodel.strategy_action import OrderType
+from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-class OrderHandler:
+class OrderService:
 
     def __init__(self):
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
-        self._notifier = TelegramNotifier()
+        self._notifier = RedisNotificationStore()
 
-    async def handle(self, payload: dict[str, Any]):
+    async def execute_order(self, payload: dict[str, Any]):
         if payload["action"] in {"add", "update"}:
             request = OrderRequest.model_validate_json(payload["order"])
-            resp = self._clob.execute_limit_order(
-                token_id=request.asset_id,
-                price=request.price,
-                size=request.action.size,
-                side=request.action.side,
-                order_type=OrderType(request.action.time_in_force),
-            )
+            if request.action.order_type == OrderType.MARKET:
+                resp = self._clob.execute_market_order(
+                    token_id=request.asset_id,
+                    price=request.price,
+                    size=request.action.size,
+                    side=request.action.side,
+                    tif=request.action.time_in_force
+                )
+            elif request.action.order_type == OrderType.LIMIT:
+                resp = self._clob.execute_limit_order(
+                    token_id=request.asset_id,
+                    price=request.price,
+                    size=request.action.size,
+                    side=request.action.side,
+                    tif=request.action.time_in_force
+                )
+            else:
+                raise NotImplementedError
 
             msg = self._format_order_message(resp, request)
             await self._notifier.send_message(msg)

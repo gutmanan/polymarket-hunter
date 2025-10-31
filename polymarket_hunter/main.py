@@ -7,9 +7,9 @@ from polymarket_hunter.api.health_router import router as health_router
 from polymarket_hunter.api.slugs_router import router as slugs_router
 from polymarket_hunter.api.webhook_router import router as webhook_router
 from polymarket_hunter.config.settings import settings
+from polymarket_hunter.core.service.scheduler_service import SchedulerService
 from polymarket_hunter.core.subscriber.order_subscriber import OrdersSubscriber
 from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
-from polymarket_hunter.scheduler.scheduler import build_scheduler
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -17,22 +17,27 @@ logger = setup_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    manager = SlugsSubscriber()
-    await manager.start()
-    app.state.manager = manager
+    slugs_subscriber = SlugsSubscriber()
+    await slugs_subscriber.start()
 
-    subscriber = OrdersSubscriber()
-    await subscriber.start()
+    orders_subscriber = OrdersSubscriber()
+    await orders_subscriber.start()
 
-    scheduler = build_scheduler(manager)
+    app.state.slugs_subscriber = slugs_subscriber
+    app.state.orders_subscriber = orders_subscriber
+
+    scheduler = SchedulerService(slugs_subscriber)
     scheduler.start()
 
     try:
         yield
+    except Exception as e:
+        logger.exception(f"Exception occurred while starting the app: {e}")
+        scheduler.reload()
     finally:
-        scheduler.shutdown(wait=False)
-        await manager.stop()
-        await subscriber.stop()
+        await slugs_subscriber.stop()
+        await orders_subscriber.stop()
+        scheduler.stop()
 
 
 def create_app() -> FastAPI:

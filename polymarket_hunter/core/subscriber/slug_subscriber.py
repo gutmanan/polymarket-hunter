@@ -1,7 +1,6 @@
 import asyncio
 from typing import Set
 
-from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.subscriber.websocket.ws_client import MarketWSClient
 from polymarket_hunter.dal.slug_store import RedisSlugStore
 from polymarket_hunter.utils.logger import setup_logger
@@ -10,13 +9,9 @@ logger = setup_logger(__name__)
 
 
 class SlugsSubscriber:
-    """
-    Coordinates slug set across Redis and the local WebSocket client.
-    Loads initial slugs from Redis on start and keeps listening to PubSub events.
-    """
 
     def __init__(self):
-        self._store = RedisSlugStore(settings.REDIS_URL)
+        self._store = RedisSlugStore()
         self._ws_client = MarketWSClient([])
         self._task: asyncio.Task | None = None
         self._events_task: asyncio.Task | None = None

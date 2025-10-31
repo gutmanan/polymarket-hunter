@@ -64,9 +64,20 @@ def prepare_market_amount(side: str, price: float, size: float) -> float:
     if side == Side.BUY:
         shares = q4(size)
         usdc_effective = q2(shares * p)
-        return float(usdc_effective)
+        ensure_dp_strict(usdc_effective, 2)
+        return to_float(usdc_effective)
     elif side == Side.SELL:
         shares = q4(size)
-        return float(shares)
+        ensure_dp_strict(shares, 4)
+        return to_float(shares)
     else:
         raise ValueError("side must be 'BUY' or 'SELL'")
+
+
+def to_float(d: Decimal) -> float:
+    return float(format(d, "f"))
+
+def ensure_dp_strict(val: Decimal, max_dp: int):
+    s = format(val, "f")
+    if "." in s and len(s.split(".")[1]) > max_dp:
+        raise ValueError(f"too many decimals: {s} (> {max_dp})")

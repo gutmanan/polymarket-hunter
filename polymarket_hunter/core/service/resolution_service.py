@@ -1,8 +1,6 @@
-import asyncio
 from functools import lru_cache
 from typing import List, Any, Dict, Tuple
 
-from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
@@ -10,7 +8,7 @@ from polymarket_hunter.core.strategy.strategy_evaluator import StrategyEvaluator
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import market_has_ended, retryable, _with_timeout
+from polymarket_hunter.utils.market import market_has_ended
 
 logger = setup_logger(__name__)
 
@@ -20,7 +18,7 @@ class ResolutionService:
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
-        self._store = RedisOrderRequestStore(settings.REDIS_URL)
+        self._store = RedisOrderRequestStore()
         self._evaluator = StrategyEvaluator()
 
     # ---------- utilities ----------

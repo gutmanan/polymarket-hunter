@@ -1,18 +1,16 @@
+from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
 from polymarket_hunter.core.service.resolution_service import get_resolution_service
-from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
-from polymarket_hunter.notifier.telegram_notifier import TelegramNotifier
-from polymarket_hunter.scheduler.task.tasks import AbstractTask
+from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-class TradeResolverTask(AbstractTask):
-
-    def __init__(self, manager: SlugsSubscriber):
-        self._manager = manager
+class TradeResolverTask(BaseIntervalTask):
+    def __init__(self):
+        super().__init__("_trade_resolver", minutes=5, misfire_grace_time=60)
         self._resolver = get_resolution_service()
-        self._notifier = TelegramNotifier()
+        self._notifier = RedisNotificationStore()
 
     async def resolve_orders(self):
         res = await self._resolver.cancel_stale_orders()
@@ -35,10 +33,6 @@ class TradeResolverTask(AbstractTask):
                 await self._notifier.send_message(msg)
             for cid, error, pos in res["fail"]:
                 logger.warning(f"Failed to redeem position: {error}")
-
-    @property
-    def id(self) -> str:
-        return "trade-resolver"
 
     async def run(self):
         await self.resolve_orders()

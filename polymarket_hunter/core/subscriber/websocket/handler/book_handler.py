@@ -4,8 +4,8 @@ from polymarket_hunter.core.subscriber.websocket.handler.handlers import Message
 
 
 class BookHandler(MessageHandler):
-    def can_handle(self, msg: Dict[str, Any]) -> bool:
-        return msg["event_type"] == "book"
+
+    event_types = ["book"]
 
     async def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
         market = ctx.markets[msg["market"]]  # ensure market is known

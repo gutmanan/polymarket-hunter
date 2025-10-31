@@ -4,7 +4,6 @@ from typing import Dict, Any
 
 from py_clob_client.order_builder.constants import BUY, SELL
 
-from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.service.resolution_service import ResolutionService
 from polymarket_hunter.core.strategy.strategy_evaluator import MarketContext
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageHandler, MessageContext
@@ -18,12 +17,11 @@ class PriceChangeHandler(MessageHandler):
     def __init__(self):
         # price_map[market_id][asset_id] -> {"outcome": str, "buy": float, "sell": float}
         self.price_map: Dict[str, Dict[str, Dict[str, Any]]] = {}
-        self.store = RedisOrderRequestStore(settings.REDIS_URL)
+        self.store = RedisOrderRequestStore()
         self._resolver = ResolutionService()
         self._lock = threading.Lock()
 
-    def can_handle(self, msg: Dict[str, Any]) -> bool:
-        return msg["event_type"] == "price_change"
+    event_types = ["price_change"]
 
     async def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
         self.update_prices(msg, ctx)
