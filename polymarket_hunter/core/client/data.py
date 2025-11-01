@@ -1,11 +1,14 @@
 import asyncio
+import json
 import os
+from ast import literal_eval
 from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
 from dotenv import load_dotenv
 from web3 import Web3
+from web3.exceptions import ContractLogicError, Web3RPCError
 
 from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
 from polymarket_hunter.utils.logger import setup_logger
@@ -52,6 +55,10 @@ class DataClient:
         params["wallet"] = addr
         response = httpx.get(self.positions_endpoint, params=params)
         return response.json()
+
+    @retryable()
+    async def get_closed_positions_retry(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None):
+        return await with_timeout(asyncio.to_thread(self.get_closed_positions, user, querystring_params), 10)
 
     def get_closed_positions(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
@@ -189,9 +196,11 @@ def get_data_client() -> DataClient:
 
 if __name__ == "__main__":
     client = DataClient()
-    # res = client.redeem_position(
-    #     "0xb4fa147809056e536d389de096d260d46956985fa12424c855f88482b2c13122",
-    #     [1, 2]
-    # )
-    for t in client.get_positions():
-        print(t)
+    for p in client.get_positions():
+        try:
+            res = client.redeem_position(p["conditionId"],[1, 2])
+            print(res)
+        except ContractLogicError as e:
+            print(e.message)
+        except Web3RPCError as e:
+            print(literal_eval(e.message).get("message"))

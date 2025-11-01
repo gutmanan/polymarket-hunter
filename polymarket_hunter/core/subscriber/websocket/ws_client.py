@@ -82,12 +82,12 @@ class MarketWSClient:
     # ----- internals -----
 
     async def _run(self) -> None:
-        backoff = 1.0
+        backoff = 100.0
         while not self._stop.is_set():
             try:
                 await self._connect_and_pump()
                 self._restart.clear()
-                backoff = 1.0
+                backoff = 100.0
             except asyncio.CancelledError:
                 raise
             except Exception as e:

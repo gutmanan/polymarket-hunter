@@ -1,3 +1,4 @@
+import time
 from functools import lru_cache
 from typing import List, Any, Dict, Tuple
 
@@ -6,11 +7,14 @@ from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.strategy.strategy_evaluator import StrategyEvaluator
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
+from polymarket_hunter.dal.datamodel.strategy_action import Side
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.utils.logger import setup_logger
 from polymarket_hunter.utils.market import market_has_ended
 
 logger = setup_logger(__name__)
+
+STALE_SECONDS_DEFAULT = 300
 
 
 class ResolutionService:
@@ -33,7 +37,7 @@ class ResolutionService:
 
     # ---------- public APIs ----------
 
-    async def cancel_stale_orders(self) -> Dict[str, List[Tuple[str, Any]]]:
+    async def cancel_stale_orders(self, stale_seconds: int = STALE_SECONDS_DEFAULT) -> Dict[str, List[Tuple[str, Any]]]:
         """
         Returns: {
           "ok":    [(order_id, response), ...],
@@ -54,9 +58,16 @@ class ResolutionService:
                 continue
             try:
                 m = await self._get_market_cached(o["market"], markets)
-                is_resolved = await self._data.is_market_resolved(o["market"])
-                if not market_has_ended(m) or not is_resolved:
+                # is_resolved = await self._data.is_market_resolved(o["market"])
+                # if not market_has_ended(m) or not is_resolved:
+                #     continue
+                now = time.time()
+                created_at = float(o["created_at"])
+
+                age = now - created_at
+                if age < stale_seconds:
                     continue
+
                 try:
                     resp = await self._clob.cancel_order_retry(o["id"])
                     results_ok.append((o["id"], resp))

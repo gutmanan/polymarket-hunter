@@ -1,6 +1,6 @@
 import asyncio
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import lru_cache
 from typing import Any, Dict, Optional, List
 
@@ -17,6 +17,9 @@ from polymarket_hunter.utils.market import with_timeout, retryable
 
 load_dotenv()
 logger = setup_logger(__name__)
+
+SECURITY_PAD = timedelta(seconds=60)
+SKEW_PAD = timedelta(seconds=3)
 
 
 def parse_iso8601(s: str) -> datetime:
@@ -124,7 +127,7 @@ class CLOBClient:
         try:
             args = OrderArgs(token_id=token_id, price=price, size=size, side=side)
             signed = self.client.create_order(args)
-            return self.client.post_order(signed, orderType=OrderType(str(tif)))
+            return self.client.post_order(signed)
         except PolyApiException as e:
             logger.error(f"Unable to place limit order: {e}",)
             return {
@@ -137,7 +140,7 @@ class CLOBClient:
         Market order: amount is the notional size in quote units the CLOB expects.
         """
         try:
-            args = MarketOrderArgs(token_id=token_id, amount=size, side=side, order_type=OrderType(str(tif)))
+            args = MarketOrderArgs(token_id=token_id, amount=size, side=side)
             logger.info(f"Market order args: {args}")
             signed = self.client.create_market_order(args)
             return self.client.post_order(signed)
@@ -164,6 +167,32 @@ class CLOBClient:
                 "code": e.status_code,
                 "error": e.error_msg
             }
+
+    def compute_expiration(
+            self,
+            *,
+            ttl: timedelta | float | int | None = None,
+            absolute: datetime | None = None,
+            as_millis: bool = False,
+    ) -> int:
+        now = datetime.now(tz=timezone.utc)
+
+        if ttl is not None and absolute is not None:
+            raise ValueError("Provide either ttl or absolute, not both.")
+
+        if ttl is not None:
+            ttl_td = ttl if isinstance(ttl, timedelta) else timedelta(seconds=float(ttl))
+            expiry = now + SECURITY_PAD + ttl_td + SKEW_PAD
+        elif absolute is not None:
+            target = absolute.astimezone(timezone.utc)
+            min_ok = now + SECURITY_PAD + SKEW_PAD
+            expiry = target if target >= min_ok else min_ok
+        else:
+            expiry = now + SECURITY_PAD + SKEW_PAD
+
+        epoch = expiry.timestamp()
+        return int(round(epoch * 1000)) if as_millis else int(round(epoch))
+
 
 @lru_cache(maxsize=1)
 def get_clob_client() -> CLOBClient:

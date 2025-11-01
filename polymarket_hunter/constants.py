@@ -3,6 +3,8 @@ from zoneinfo import ZoneInfo
 
 Q2 = Decimal("0.01")
 
+Q3 = Decimal("0.001")
+
 Q4 = Decimal("0.0001")
 
 ET = ZoneInfo("America/New_York")

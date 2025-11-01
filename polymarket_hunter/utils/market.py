@@ -8,7 +8,7 @@ from py_clob_client.exceptions import PolyApiException
 from tenacity import (retry, stop_after_attempt, wait_random_exponential, retry_if_exception, retry_if_exception_type,
                       before_sleep_log)
 
-from polymarket_hunter.constants import Q2, Q4
+from polymarket_hunter.constants import Q2, Q4, Q3
 from polymarket_hunter.dal.datamodel.strategy_action import Side
 from polymarket_hunter.utils.logger import setup_logger
 
@@ -52,18 +52,19 @@ def parse_iso_utc(s: str | None) -> datetime | None:
 
 def q2(x): return Decimal(str(x)).quantize(Q2, rounding=ROUND_DOWN)
 
+def q3(x): return Decimal(str(x)).quantize(Q3, rounding=ROUND_DOWN)
+
 def q4(x): return Decimal(str(x)).quantize(Q4, rounding=ROUND_DOWN)
 
-def prepare_market_amount(side: str, price: float, size: float) -> float:
+def prepare_market_amount(side: str, price: Decimal, size: float) -> float:
     """
     For BUY: desired is intended USDC budget.
     For SELL: desired is intended share quantity.
     Returns tuple: (amount_for_api_str, shares_str, usdc_str)
     """
-    p = Decimal(str(price))
     if side == Side.BUY:
         shares = q4(size)
-        usdc_effective = q2(shares * p)
+        usdc_effective = q2(shares * price)
         ensure_dp_strict(usdc_effective, 2)
         return to_float(usdc_effective)
     elif side == Side.SELL:

@@ -7,11 +7,12 @@ from py_clob_client.order_builder.constants import BUY, SELL
 from polymarket_hunter.core.service.resolution_service import ResolutionService
 from polymarket_hunter.core.strategy.strategy_evaluator import MarketContext
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageHandler, MessageContext
+from polymarket_hunter.utils.market import q3
 
 
 class PriceChangeHandler(MessageHandler):
     def __init__(self):
-        # price_map[market_id][asset_id] -> {"outcome": str, "buy": float, "sell": float}
+        # price_map[market_id][asset_id] -> {"outcome": str, "buy": Decimal, "sell": Decimal}
         self.price_map: Dict[str, Dict[str, Dict[str, Any]]] = {}
         self._resolver = ResolutionService()
         self._lock = threading.Lock()
@@ -32,17 +33,26 @@ class PriceChangeHandler(MessageHandler):
         token_ids = json.loads(market["clobTokenIds"])
         outcomes = json.loads(market["outcomes"])
 
-        market_book = self.price_map.setdefault(market_id, {})
+        with self._lock:
+            market_book = self.price_map.setdefault(market_id, {})
 
-        for pc in msg["price_changes"]:
-            asset_id = pc["asset_id"]
-            try:
-                outcome = outcomes[token_ids.index(asset_id)]
-            except ValueError:
-                continue  # unknown asset_id, skip
+            for pc in msg["price_changes"]:
+                asset_id = pc["asset_id"]
 
-            asset_book = market_book.setdefault(asset_id, {"outcome": outcome})
-            asset_book[pc["side"]] = float(pc["price"])
+                try:
+                    outcome = outcomes[token_ids.index(asset_id)]
+                except ValueError:
+                    continue
+
+                asset_book = market_book.setdefault(asset_id, {"outcome": outcome})
+
+                best_ask = pc.get("best_ask")
+                best_bid = pc.get("best_bid")
+
+                if best_ask is not None:
+                    asset_book[BUY] = q3(best_ask)
+                if best_bid is not None:
+                    asset_book[SELL] = q3(best_bid)
 
     # ---------- context lifecycle ----------
 

@@ -30,7 +30,7 @@ class OrderService:
                     token_id=request.asset_id,
                     size=request.size,
                     side=request.side,
-                    tif=request.action.time_in_force if request.action is not None else None,
+                    tif=request.action.time_in_force
                 )
             elif request.action.order_type == OrderType.LIMIT:
                 resp = self._clob.execute_limit_order(
@@ -38,12 +38,12 @@ class OrderService:
                     price=request.price,
                     size=request.size,
                     side=request.side,
-                    tif=request.action.time_in_force if request.action is not None else None,
+                    tif=request.action.time_in_force
                 )
             else:
                 raise NotImplementedError
 
-            if request.side == Side.SELL and bool(resp.get("success")):
+            if bool(resp.get("success")) == (request.side == Side.SELL):
                 await self._store.remove(request.market_id, request.asset_id)
 
             msg = self._format_order_message(resp, request)

@@ -30,6 +30,6 @@ class StrategyAction(BaseModel):
     stop_loss: Optional[float] = 1
     take_profit: Optional[float] = 1
     max_spread: Optional[float] = 0.1
-    order_type: Optional[OrderType] = OrderType.LIMIT
-    time_in_force: Optional[TIF] = TIF.GTD
+    order_type: Optional[OrderType] = OrderType.MARKET
+    time_in_force: Optional[TIF] = TIF.FOK
     cancel_on_conflict: bool = True

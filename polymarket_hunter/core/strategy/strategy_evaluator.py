@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional, Dict, Any, Tuple
 
 from polymarket_hunter.config.strategies import strategies
@@ -41,7 +42,7 @@ class StrategyEvaluator:
         orders = await self._clob.get_orders_retry(market_id)
         return next((o for o in orders if o.get("asset_id") == asset_id), None)
 
-    async def _send_exit_notification(self, context: MarketContext, outcome: str, entry_price: float,current_price: float, is_stop: bool):
+    async def _send_exit_notification(self, context: MarketContext, outcome: str, entry_price: Decimal, current_price: Decimal, is_stop: bool):
         diff = abs(entry_price - current_price)
         gain_loss_text = f"−{diff:.3f}" if is_stop else f"+{diff:.3f}"
         emoji = "🛑" if is_stop else "🎯"
@@ -65,23 +66,22 @@ class StrategyEvaluator:
         action: StrategyAction = rule.action
         market_id = context.condition_id
         asset_id = context.outcome_assets[outcome]
-        # Check for existing positions/orders
-        # active_position = await self._get_active_position(market_id, asset_id)
-        # active_order = await self._get_active_order(market_id, asset_id)
 
-        # if active_position or active_order:
-        #     return None
+        active_position = await self._get_active_position(market_id, asset_id)
+        active_order = await self._get_active_order(market_id, asset_id)
+
+        if active_position or active_order:
+            return None
 
         side = action.side
         outcome_prices = context.outcome_prices[outcome]
-        current_price = outcome_prices.get(side)
+        current_price: Decimal = outcome_prices.get(side)
 
         if current_price is None or current_price == 0:
             return None
 
         if action.order_type == OrderType.MARKET:
-            market_size = prepare_market_amount(side, current_price, action.size)
-            size = max(market_size, context.order_min_size)
+            size = prepare_market_amount(side, current_price, action.size)
         else:
             size = max(action.size, context.order_min_size)
 
@@ -90,7 +90,7 @@ class StrategyEvaluator:
             market_id=market_id,
             asset_id=asset_id,
             outcome=outcome,
-            price=current_price,
+            price=current_price.__float__(),
             size=size,
             side=side,
             action=action,
@@ -99,21 +99,23 @@ class StrategyEvaluator:
             rule_name=rule.name
         )
 
-    async def should_exit(self, context: MarketContext, outcome: str, enter_request: OrderRequest) -> Optional[OrderRequest]:
+    async def should_exit(self, context: MarketContext, outcome: str, enter_request: OrderRequest) -> Optional[
+        OrderRequest]:
         market_id = enter_request.market_id
         asset_id = enter_request.asset_id
 
-        # active_position = await self._get_active_position(market_id, asset_id)
-        # active_order = await self._get_active_order(market_id, asset_id)
-        #
-        # if not active_position or active_order:
-        #     return None
+        active_position = await self._get_active_position(market_id, asset_id)
+        active_order = await self._get_active_order(market_id, asset_id)
+
+        if not active_position or active_order:
+            return None
 
         entry_price: float = enter_request.price
         entry_side: Side = enter_request.side
         exit_side: Side = Side.BUY if entry_side == Side.SELL else Side.SELL
+        exit_size: float = active_position["size"]
         outcome_prices = context.outcome_prices[outcome]
-        current_price = outcome_prices.get(exit_side)
+        current_price: Decimal = outcome_prices.get(exit_side)
 
         if current_price is None or current_price == 0:
             return None
@@ -133,17 +135,17 @@ class StrategyEvaluator:
 
         # Send notifications
         if hit_stop:
-            await self._send_exit_notification(context, outcome, entry_price, current_price, is_stop=True)
+            await self._send_exit_notification(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=True)
         if hit_tp:
-            await self._send_exit_notification(context, outcome, entry_price, current_price, is_stop=False)
+            await self._send_exit_notification(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=False)
 
         # Build and return exit OrderRequest
         return OrderRequest(
             market_id=market_id,
             asset_id=asset_id,
             outcome=outcome,
-            price=current_price,
-            size=enter_request.size,
+            price=current_price.__float__(),
+            size=exit_size,
             side=exit_side,
             action=enter_request.action,
             context=context,

@@ -106,9 +106,9 @@ class ReportService:
         fills.sort(key=lambda x: x.ts)
         return fills
 
-    def _fetch_closed_pnl(self, start_ts: int, end_ts: int) -> Decimal:
+    async def _fetch_closed_pnl(self, start_ts: int, end_ts: int) -> Decimal:
         try:
-            closed_positions: List[Dict[str, Any]] = self.data.get_closed_positions()
+            closed_positions: List[Dict[str, Any]] = await self.data.get_closed_positions_retry()
             total_realized_pnl = Decimal("0")
             for pos in closed_positions:
                 pnl_str = pos.get("realizedPnl")
@@ -125,7 +125,7 @@ class ReportService:
 
     # ---------- Marking ----------
 
-    def _mark_price(
+    async def _mark_price(
         self,
         fills_subset: List[Fill],
         market_id: str,
@@ -134,7 +134,7 @@ class ReportService:
         is_end_dt: bool = True,
     ) -> Decimal:
         m = self._get_market(market_id)
-        is_resolved = asyncio.run(self.data.is_market_resolved(market_id))
+        is_resolved = await self.data.is_market_resolved(market_id)
         if m and (market_has_ended(m) or is_resolved):
             try:
                 winning = self._is_asset_winning(m, asset_id)
@@ -199,14 +199,14 @@ class ReportService:
 
     # ---------- Report ----------
 
-    def generate_report(self, *, hours_back: int) -> str:
+    async def generate_report(self, *, hours_back: int) -> str:
         now = datetime.now(timezone.utc)
         start_dt = now - timedelta(hours=hours_back)
         end_dt = now
         start_ts = int(start_dt.timestamp())
         end_ts = int(end_dt.timestamp())
 
-        realized_from_settlement = self._fetch_closed_pnl(start_ts, end_ts)
+        realized_from_settlement = await self._fetch_closed_pnl(start_ts, end_ts)
 
         fills_to_start = self._fetch_all_fills_upto(start_ts)
         fills_to_end = self._fetch_all_fills_upto(end_ts)
@@ -233,7 +233,7 @@ class ReportService:
         unrealized_start = Decimal("0")
         start_assets = [aid for aid, q in inv_qty_start.items() if q > 0]
         marks_start: Dict[str, Decimal] = {
-            aid: self._mark_price(fills_to_start, amap_start[aid], aid, is_end_dt=False)
+            aid: await self._mark_price(fills_to_start, amap_start[aid], aid, is_end_dt=False)
             for aid in start_assets
         }
         for aid, qty in inv_qty_start.items():
@@ -245,7 +245,7 @@ class ReportService:
         unrealized_end = Decimal("0")
         end_assets = [aid for aid, q in inv_qty_end.items() if q > 0]
         marks_end: Dict[str, Decimal] = {
-            aid: self._mark_price(fills_to_end, amap_end[aid], aid, is_end_dt=True)
+            aid: await self._mark_price(fills_to_end, amap_end[aid], aid, is_end_dt=True)
             for aid in end_assets
         }
         for aid, qty in inv_qty_end.items():
@@ -272,4 +272,5 @@ class ReportService:
 
 if __name__ == "__main__":
     svc = ReportService()
-    print(svc.generate_report(hours_back=48))
+    report = asyncio.run(svc.generate_report(hours_back=72))
+    print(report)
