@@ -69,7 +69,7 @@ class MarketWSClient:
         Update the tracked slugs -> resolve to markets -> trigger resubscribe.
         """
         async with self._update_lock:
-            self.markets = await asyncio.to_thread(self._slugs_to_markets_sync, slugs)
+            self.markets = await self._slugs_to_markets(slugs)
             if not self.markets:
                 return
             self._assets_ids = [a for m in self.markets for a in json.loads(m.get("clobTokenIds") or [])]
@@ -168,11 +168,11 @@ class MarketWSClient:
                 await self._ws.close()
         self._ws = None
 
-    def _slugs_to_markets_sync(self, slugs: List[str]) -> List[dict[str, Any]]:
+    async def _slugs_to_markets(self, slugs: List[str]) -> List[dict[str, Any]]:
         markets: List[dict[str, Any]] = []
         for slug in slugs:
             try:
-                m = self._gamma.get_market_by_slug(slug)
+                m = await self._gamma.get_market_by_slug(slug)
                 if m:
                     markets.append(m)
             except Exception as e:

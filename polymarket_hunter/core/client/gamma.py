@@ -1,7 +1,7 @@
-import json
 import os
+from datetime import datetime, timezone, time
 from functools import lru_cache
-from typing import Any
+from typing import Any, Dict, Optional, AsyncGenerator
 
 import httpx
 from dotenv import load_dotenv
@@ -10,49 +10,60 @@ load_dotenv()
 
 
 class GammaClient:
-    def __init__(self):
+
+    def __init__(self, timeout: float = 15.0):
         self.gamma_url = os.environ.get("GAMMA_HOST", "https://api.gamma.markets")
-        self.markets_endpoint = self.gamma_url + "/markets"
-        self.events_endpoint = self.gamma_url + "/events"
+        self.markets_endpoint = f"{self.gamma_url}/markets"
+        self.events_endpoint = f"{self.gamma_url}/events"
+        self._client = httpx.AsyncClient(timeout=timeout)
 
-    def get_market_by_slug(self, slug: str) -> Any:
+    # ---------- Public API ----------
+
+    async def get_market_by_slug(self, slug: str) -> Any:
         url = f"{self.markets_endpoint}/slug/{slug}"
-        response = httpx.get(url, params={"include_tag": True})
+        response = await self._client.get(url, params={"include_tag": True})
+        response.raise_for_status()
         return response.json()
 
-    def get_markets(self, querystring_params=None) -> Any:
-        response = httpx.get(self.markets_endpoint, params=querystring_params)
+    async def get_markets(self, params: Optional[Dict[str, Any]] = None) -> Any:
+        response = await self._client.get(self.markets_endpoint, params=params or {})
+        response.raise_for_status()
         return response.json()
 
-    def get_current_markets(self, limit=100) -> Any:
-        return self.get_markets(
-            querystring_params={
-                "active": True,
-                "closed": False,
-                "archived": False,
-                "limit": limit,
-            }
-        )
+    async def get_all_markets(self, params: Optional[Dict[str, Any]] = None) -> list[Dict[str, Any]]:
+        results: list[Dict[str, Any]] = []
+        async for market in self._aiter_markets(params=params):
+            results.append(market)
+        return results
 
-    def get_all_current_markets(self, limit=100) -> Any:
-        offset = 0
-        all_markets = []
+    async def _aiter_markets(self, page_size: int = 250, params: Optional[Dict[str, Any]] = None) -> AsyncGenerator[Dict[str, Any], None]:
+        params = dict(params or {})
+        offset = int(params.get("offset") or 0)
+        limit = int(params.get("limit") or page_size)
+        params["limit"] = limit
+
         while True:
-            params = {
-                "active": True,
-                "closed": False,
-                "archived": False,
-                "limit": limit,
-                "offset": offset,
-            }
-            market_batch = self.get_markets(querystring_params=params)
-            all_markets.extend(market_batch)
-
-            if len(market_batch) < limit:
+            params["offset"] = offset
+            page = await self.get_markets(params)
+            if not page:
+                break
+            for market in page:
+                yield market
+            if len(page) < limit:
                 break
             offset += limit
 
-        return all_markets
+    # ---------- Lifecycle ----------
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.aclose()
+
 
 @lru_cache(maxsize=1)
 def get_gamma_client() -> GammaClient:
@@ -60,7 +71,29 @@ def get_gamma_client() -> GammaClient:
 
 
 if __name__ == "__main__":
-    gamma = get_gamma_client()
-    res = gamma.get_market_by_slug("bitcoin-up-or-down-october-27-12pm-et")
-    # res = gamma.get_market(40)
-    print(json.dumps(res))
+    import asyncio
+
+    async def main():
+        gamma = get_gamma_client()
+        now = datetime.now(timezone.utc)
+        current = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_of_day = datetime.combine(now.date(), time(23, 59, 59, tzinfo=timezone.utc))
+        end = end_of_day.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        res = await gamma.get_all_markets(
+            params={
+                'active': True,
+                'closed': False,
+                'archived': False,
+                'include_tag': True,
+                'tag_id': 101757,
+                "start_date_max": current,
+                "end_date_max": end,
+                "order": "startDate",
+                "ascending": False,
+            }
+        )
+        print(f"Found {len(res)} markets")
+        await gamma.aclose()
+
+    asyncio.run(main())

@@ -7,7 +7,6 @@ from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.strategy.strategy_evaluator import StrategyEvaluator
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
-from polymarket_hunter.dal.datamodel.strategy_action import Side
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.utils.logger import setup_logger
 from polymarket_hunter.utils.market import market_has_ended

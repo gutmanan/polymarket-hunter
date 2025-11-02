@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, List
 
 from dotenv import load_dotenv
 from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OrderType, OrderBookSummary, OpenOrderParams
+from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OrderBookSummary, OpenOrderParams
 from py_clob_client.constants import POLYGON
 from py_clob_client.exceptions import PolyApiException
 from web3 import Web3

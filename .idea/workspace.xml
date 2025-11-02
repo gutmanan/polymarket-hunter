@@ -7,18 +7,8 @@
     <list default="true" id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/data.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/report_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/report_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/gamma.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/gamma.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/ws_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/strategy_action.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/strategy_action.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/utils/market.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/utils/market.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -105,7 +95,7 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.046289064" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18457031" />
       <window_info id="Commit" order="1" weight="0.25" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" />
@@ -116,11 +106,11 @@
       <window_info anchor="bottom" id="Version Control" order="0" />
       <window_info anchor="bottom" id="Problems" order="1" />
       <window_info anchor="bottom" id="Problems View" order="2" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="3" visible="true" />
+      <window_info anchor="bottom" id="Terminal" order="3" weight="0.19668008" />
       <window_info anchor="bottom" id="Services" order="4" weight="0.59313726" />
       <window_info anchor="bottom" id="Python Packages" order="5" weight="0.47233403" />
       <window_info anchor="bottom" id="Python Console" order="6" weight="0.1" />
-      <window_info anchor="bottom" id="Run" order="7" weight="0.4894958" />
+      <window_info active="true" anchor="bottom" id="Run" order="7" visible="true" weight="0.2721328" />
       <window_info anchor="bottom" id="Find" order="8" weight="0.34054327" />
       <window_info anchor="right" id="PR AI Assistant" />
       <window_info anchor="right" id="Endpoints" />
@@ -154,7 +144,7 @@
       <recent name="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.data">
+  <component name="RunManager" selected="Python.gamma">
     <configuration default="true" type="JetRunConfigurationType">
       <module name="polymarket-hunter" />
       <method v="2">
@@ -296,11 +286,11 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.gamma" />
         <item itemvalue="Python.data" />
         <item itemvalue="Python.report_service" />
         <item itemvalue="Python.report_notifier_task (1)" />
         <item itemvalue="Python.telegram_notifier" />
-        <item itemvalue="Python.gamma" />
       </list>
     </recent_temporary>
   </component>
@@ -340,7 +330,7 @@
       <workItem from="1761428568368" duration="9923000" />
       <workItem from="1761473192572" duration="20014000" />
       <workItem from="1761513008937" duration="12012000" />
-      <workItem from="1761931821601" duration="32378000" />
+      <workItem from="1761931821601" duration="44505000" />
     </task>
     <servers />
   </component>
@@ -356,7 +346,7 @@
     <SUITE FILE_PATH="coverage/polymarket_hunter$telegram_notifier.coverage" NAME="telegram_notifier Coverage Results" MODIFIED="1761514455237" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/notifier" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1761129080303" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$report_notifier_task__1_.coverage" NAME="report_notifier_task (1) Coverage Results" MODIFIED="1761919793170" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/scheduler" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$gamma.coverage" NAME="gamma Coverage Results" MODIFIED="1761215356753" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
+    <SUITE FILE_PATH="coverage/polymarket_hunter$gamma.coverage" NAME="gamma Coverage Results" MODIFIED="1762071662269" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$run.coverage" NAME="run Coverage Results" MODIFIED="1761129165761" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$housekeeping.coverage" NAME="housekeeping Coverage Results" MODIFIED="1761389503165" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$clob.coverage" NAME="clob Coverage Results" MODIFIED="1761549958929" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
