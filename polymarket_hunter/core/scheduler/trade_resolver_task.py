@@ -1,3 +1,4 @@
+from polymarket_hunter.core.notifier.formatter.close_position_formatter import format_position_message
 from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
 from polymarket_hunter.core.service.resolution_service import get_resolution_service
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
@@ -15,22 +16,16 @@ class TradeResolverTask(BaseIntervalTask):
     async def resolve_orders(self):
         res = await self._resolver.cancel_stale_orders()
         if res:
-            for order in res["ok"]:
+            for oid, r, order in res["ok"]:
                 logger.info(f"Cancelled order: {order}")
-            for order in res["fail"]:
-                logger.warning(f"Failed to cancel order: {order}")
+            for oid, error, order in res["fail"]:
+                logger.warning(f"Failed to cancel order: {error}")
 
     async def resolve_positions(self):
         res = await self._resolver.redeem_resolved_positions()
         if res:
-            for cid, resp, pos in res["ok"]:
-                msg = (
-                    f"📊 <b>{pos['title']}</b>\n"
-                    f"📈 <b>Outcome:</b> {pos['outcome']}\n"
-                    f"💰 <b>PnL:</b> {pos['cashPnl']:+.2f} USDC ({pos['percentPnl']:+.1f}%)\n"
-                    f"💵 <b>Size:</b> {pos['size']} @ {pos['avgPrice']:.3f} → {pos['curPrice']:.3f}"
-                )
-                await self._notifier.send_message(msg)
+            for cid, r, pos in res["ok"]:
+                await self._notifier.send_message(format_position_message(pos))
             for cid, error, pos in res["fail"]:
                 logger.warning(f"Failed to redeem position: {error}")
 

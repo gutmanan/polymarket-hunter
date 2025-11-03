@@ -1,0 +1,76 @@
+import asyncio
+import re
+from datetime import datetime, timezone, time
+
+from polymarket_hunter.core.client.gamma import get_gamma_client
+from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
+from polymarket_hunter.utils.market import market_has_ended
+
+ISOZ_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+
+class HourlyMarketsTask(BaseIntervalTask):
+    def __init__(self, slugs_subscriber):
+        super().__init__("_daily_markets", minutes=3, misfire_grace_time=120)
+        self._slugs_subscriber = slugs_subscriber
+        self._gamma = get_gamma_client()
+
+    async def get_current_markets(self):
+        now = datetime.now(timezone.utc)
+        now_iso = now.strftime(ISOZ_FMT)
+        end = datetime.combine(now.date(), time(23, 59, 59, tzinfo=timezone.utc))
+        end_iso = end.strftime(ISOZ_FMT)
+
+        markets = await self._gamma.get_all_markets(
+            params={
+                'active': True,
+                'closed': False,
+                'archived': False,
+                'include_tag': True,
+                'tag_id': 101757, # Recurring markets tag id
+                "end_date_min": now_iso,
+                "end_date_max": end_iso,
+                "order": "startDate",
+                "ascending": False,
+            }
+        )
+        return self._filtered_slugs(markets, exclude=r"^[a-z0-9]+-updown-15m-\d+$")
+
+    async def add_missing_current_markets(self) -> None:
+        want = await self.get_current_markets()
+        have = set(self._slugs_subscriber.get_slugs())
+        missing = want - have
+        if missing:
+            await asyncio.gather(*(self._slugs_subscriber.add_slug(s) for s in sorted(missing)))
+
+    async def prune_expired(self) -> None:
+        markets = await self._slugs_subscriber.get_markets()
+        expired_slugs = [m["slug"] for m in markets if m.get("slug") and market_has_ended(m)]
+        if expired_slugs:
+            await asyncio.gather(*(self._slugs_subscriber.remove_slug(s) for s in expired_slugs))
+
+    async def run(self):
+        await self.add_missing_current_markets()
+        await self.prune_expired()
+
+    def _filtered_slugs(
+            self,
+            markets: list[dict],
+            include: str | None = None,
+            exclude: str | None = None
+    ) -> set[str]:
+        include_re = re.compile(include) if include else None
+        exclude_re = re.compile(exclude) if exclude else None
+
+        slugs = set()
+        for m in markets:
+            slug = m.get("slug")
+            if not slug:
+                continue
+            if include_re and not include_re.search(slug):
+                continue
+            if exclude_re and exclude_re.search(slug):
+                continue
+            slugs.add(slug)
+
+        return slugs

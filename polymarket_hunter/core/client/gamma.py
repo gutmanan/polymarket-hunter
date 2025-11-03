@@ -1,5 +1,5 @@
+import json
 import os
-from datetime import datetime, timezone, time
 from functools import lru_cache
 from typing import Any, Dict, Optional, AsyncGenerator
 
@@ -75,25 +75,8 @@ if __name__ == "__main__":
 
     async def main():
         gamma = get_gamma_client()
-        now = datetime.now(timezone.utc)
-        current = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_of_day = datetime.combine(now.date(), time(23, 59, 59, tzinfo=timezone.utc))
-        end = end_of_day.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        res = await gamma.get_all_markets(
-            params={
-                'active': True,
-                'closed': False,
-                'archived': False,
-                'include_tag': True,
-                'tag_id': 101757,
-                "start_date_max": current,
-                "end_date_max": end,
-                "order": "startDate",
-                "ascending": False,
-            }
-        )
-        print(f"Found {len(res)} markets")
+        res = await gamma.get_market_by_slug("will-the-price-of-bitcoin-be-between-118000-120000-on-november-2")
+        print(json.dumps(res))
         await gamma.aclose()
 
     asyncio.run(main())

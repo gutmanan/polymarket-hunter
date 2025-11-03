@@ -1,7 +1,8 @@
+import time
 from datetime import datetime
 from typing import Optional, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic.config import ConfigDict
 
 
@@ -16,8 +17,17 @@ class MarketContext(BaseModel):
     end_date: Optional[datetime]
     liquidity: float
     order_min_size: float
+    order_min_price_tick_size: float
+    spread: float
+    competitive: float
+    one_hour_price_change: float
+    one_day_price_change: float
     outcomes: list[str]
     clob_token_ids: list[str]
     outcome_prices: dict[str, dict[str, Any]]
     outcome_assets: dict[str, str]
     tags: list[str]
+    raw: Optional[dict[str, Any]] = None
+    created_ts: float = Field(default_factory=time.time)
+    updated_ts: float = Field(default_factory=time.time)
+

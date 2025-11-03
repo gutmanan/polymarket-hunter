@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, Tuple
 from polymarket_hunter.config.strategies import strategies
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
+from polymarket_hunter.core.notifier.formatter.exit_message_formatter import format_exit_message
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.datamodel.strategy import Rule, Strategy
@@ -20,6 +21,8 @@ class StrategyEvaluator:
         self._clob = get_clob_client()
         self._data = get_data_client()
         self._notifier = RedisNotificationStore()
+
+    # ---------- utilities ----------
 
     def _find_action_for_context(self, context: MarketContext, outcome: str) -> Optional[Tuple[Strategy, Rule]]:
         for strategy in strategies:
@@ -41,21 +44,6 @@ class StrategyEvaluator:
     async def _get_active_order(self, market_id: str, asset_id: str) -> Optional[Dict[str, Any]]:
         orders = await self._clob.get_orders_retry(market_id)
         return next((o for o in orders if o.get("asset_id") == asset_id), None)
-
-    async def _send_exit_notification(self, context: MarketContext, outcome: str, entry_price: Decimal, current_price: Decimal, is_stop: bool):
-        diff = abs(entry_price - current_price)
-        gain_loss_text = f"−{diff:.3f}" if is_stop else f"+{diff:.3f}"
-        emoji = "🛑" if is_stop else "🎯"
-        title = "Stop Loss Triggered" if is_stop else "Take Profit Reached"
-
-        message = (
-            f"{emoji} <b>{title}</b>\n"
-            f"📊 <b>{context.slug}</b>\n"
-            f"📈 <b>Outcome:</b> {outcome}\n"
-            f"💸 <b>Entry:</b> {entry_price:.3f} → <b>Exit:</b> {current_price:.3f}\n"
-            f"📈 <b>Gain/Loss:</b> {gain_loss_text} USDC"
-        )
-        await self._notifier.send_message(message)
 
     async def should_enter(self, context: MarketContext, outcome: str) -> Optional[OrderRequest]:
         result = self._find_action_for_context(context, outcome)
@@ -99,8 +87,7 @@ class StrategyEvaluator:
             rule_name=rule.name
         )
 
-    async def should_exit(self, context: MarketContext, outcome: str, enter_request: OrderRequest) -> Optional[
-        OrderRequest]:
+    async def should_exit(self, context: MarketContext, outcome: str, enter_request: OrderRequest) -> Optional[OrderRequest]:
         market_id = enter_request.market_id
         asset_id = enter_request.asset_id
 
@@ -135,9 +122,11 @@ class StrategyEvaluator:
 
         # Send notifications
         if hit_stop:
-            await self._send_exit_notification(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=True)
+            message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=True)
+            await self._notifier.send_message(message)
         if hit_tp:
-            await self._send_exit_notification(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=False)
+            message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=False)
+            await self._notifier.send_message(message)
 
         # Build and return exit OrderRequest
         return OrderRequest(

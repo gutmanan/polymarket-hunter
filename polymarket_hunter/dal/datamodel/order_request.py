@@ -12,7 +12,7 @@ from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
 
 
 class OrderRequest(BaseModel):
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, extra="ignore")
     market_id: str
     asset_id: str
     outcome: str

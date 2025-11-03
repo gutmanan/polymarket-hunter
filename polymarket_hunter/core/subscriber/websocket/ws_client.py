@@ -135,7 +135,7 @@ class MarketWSClient:
         payload = {"assets_ids": self._assets_ids, "type": "markets"}
         try:
             await ws.send(json.dumps(payload))
-            logger.info("WS subscribe sent: %d assets", len(self._assets_ids))
+            logger.info("WS subscribe sent: %d markets -> %d assets", len(self.markets), len(self._assets_ids))
         except Exception as e:
             logger.warning("Failed to send subscribe: %s", e)
 

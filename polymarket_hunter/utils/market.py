@@ -9,6 +9,7 @@ from tenacity import (retry, stop_after_attempt, wait_random_exponential, retry_
                       before_sleep_log)
 
 from polymarket_hunter.constants import Q2, Q4, Q3
+from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.strategy_action import Side
 from polymarket_hunter.utils.logger import setup_logger
 
@@ -49,6 +50,24 @@ def parse_iso_utc(s: str | None) -> datetime | None:
         return datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
     except Exception:
         return None
+
+def _now_s() -> int:
+    return int(datetime.now(timezone.utc).timestamp())
+
+def _to_epoch_s(dt: datetime) -> int:
+    return int(dt.timestamp())
+
+def time_left_sec(ctx: MarketContext) -> int:
+    return _to_epoch_s(ctx.end_date) - _now_s()
+
+def duration_sec(ctx: MarketContext) -> int:
+    return _to_epoch_s(ctx.end_date) - _to_epoch_s(ctx.start_date)
+
+def late_threshold_sec(ctx: MarketContext, tfs: int) -> int:
+    d = max(0, duration_sec(ctx))
+    return d // tfs
+
+# ---------- price -------------
 
 def q2(x): return Decimal(str(x)).quantize(Q2, rounding=ROUND_DOWN)
 

@@ -1,0 +1,125 @@
+from __future__ import annotations
+
+import json
+from typing import Optional, List
+
+import redis.asyncio as redis
+
+from polymarket_hunter.config.settings import settings
+from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
+
+TRADE_RECORDS_KEY = "hunter:trade_records"
+DOC_PREFIX = "hunter:trade_records:doc:"
+EVENTS_CHANNEL = "hunter:trade_records:events"
+
+
+class RedisTradeRecordStore:
+    def __init__(self, redis_url: Optional[str] = None):
+        self._redis = redis.from_url(redis_url or settings.REDIS_URL, decode_responses=True)
+
+    @property
+    def client(self) -> redis.Redis:
+        return self._redis
+
+    # ---------- key builders ----------
+    @staticmethod
+    def _set_key(market_id: str, asset_id: str, side: str) -> str:
+        return f"{market_id}:{asset_id}:{side}"
+
+    @staticmethod
+    def _doc_key(market_id: str, asset_id: str, side: str) -> str:
+        return f"{DOC_PREFIX}{market_id}:{asset_id}:{side}"
+
+    # ---------- CRUD ----------
+
+    async def contains(self, market_id: str, asset_id: str, side: str) -> bool:
+        return await self._redis.sismember(TRADE_RECORDS_KEY, self._set_key(market_id, asset_id, side))
+
+    async def add(self, rec: TradeRecord) -> None:
+        """
+        Upsert behavior:
+        - ensure the key exists in hunter:trade_records set
+        - store full TradeRecord JSON doc at DOC_PREFIX...
+        - publish 'add' if new, 'update' if already existed
+        """
+        skey = self._set_key(rec.market_id, rec.asset_id, rec.side)
+        dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side)
+        raw = rec.model_dump_json()
+
+        pipe = self._redis.pipeline(transaction=True)
+        pipe.sadd(TRADE_RECORDS_KEY, skey)
+        pipe.set(dkey, raw)
+        sadd_res, _ = await pipe.execute()
+
+        event = "add" if sadd_res == 1 else "update"
+        await self._publish({"action": event, "key": skey, "trade_record": raw})
+
+    async def get(self, market_id: str, asset_id: str, side: str) -> Optional[TradeRecord]:
+        raw = await self._redis.get(self._doc_key(market_id, asset_id, side))
+        if not raw:
+            return None
+        return TradeRecord.model_validate_json(raw)
+
+    async def update(self, rec: TradeRecord) -> None:
+        """Simple upsert without re-publishing add/update differentiation"""
+        skey = self._set_key(rec.market_id, rec.asset_id, rec.side)
+        dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side)
+        raw = rec.model_dump_json()
+
+        await self._redis.set(dkey, raw)
+        await self._publish({"action": "update", "key": skey, "trade_record": raw})
+
+    async def remove(self, market_id: str, asset_id: str, side: str) -> None:
+        skey = self._set_key(market_id, asset_id, side)
+        dkey = self._doc_key(market_id, asset_id, side)
+        pipe = self._redis.pipeline(transaction=True)
+        pipe.srem(TRADE_RECORDS_KEY, skey)
+        pipe.delete(dkey)
+        removed, _ = await pipe.execute()
+        if removed:
+            await self._publish({"action": "remove", "key": skey})
+
+    async def list_keys(self) -> List[str]:
+        members = await self._redis.smembers(TRADE_RECORDS_KEY)
+        return sorted(members)
+
+    async def list_docs(self) -> List[TradeRecord]:
+        """Fetch all stored TradeRecords"""
+        keys = await self.list_keys()
+        if not keys:
+            return []
+        doc_keys = [f"{DOC_PREFIX}{k}" for k in keys]
+        raws = await self._redis.mget(doc_keys)
+        out: List[TradeRecord] = []
+        for raw in raws:
+            if not raw:
+                continue
+            try:
+                out.append(TradeRecord.model_validate_json(raw))
+            except Exception:
+                continue
+        return out
+
+    # ---------- Pub/Sub ----------
+
+    async def _publish(self, message: dict) -> None:
+        await self._redis.publish(EVENTS_CHANNEL, json.dumps(message))
+
+    async def subscribe_events(self):
+        """Async generator yielding every pub/sub event as dict"""
+        pubsub = self._redis.pubsub()
+        await pubsub.subscribe(EVENTS_CHANNEL)
+        try:
+            async for msg in pubsub.listen():
+                if msg.get("type") != "message":
+                    continue
+                data = msg.get("data")
+                if isinstance(data, (bytes, bytearray)):
+                    data = data.decode()
+                try:
+                    yield json.loads(data)
+                except Exception:
+                    continue
+        finally:
+            await pubsub.unsubscribe(EVENTS_CHANNEL)
+            await pubsub.close()
