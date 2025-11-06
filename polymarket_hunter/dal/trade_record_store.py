@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional, List
+from typing import Optional, List, AsyncIterator
 
 import redis.asyncio as redis
 
@@ -23,17 +23,45 @@ class RedisTradeRecordStore:
 
     # ---------- key builders ----------
     @staticmethod
-    def _set_key(market_id: str, asset_id: str, side: str) -> str:
-        return f"{market_id}:{asset_id}:{side}"
+    def _set_key(market_id: str, asset_id: str, side: str, order_id: str) -> str:
+        return f"{market_id}:{asset_id}:{side}:{order_id}"
 
     @staticmethod
-    def _doc_key(market_id: str, asset_id: str, side: str) -> str:
-        return f"{DOC_PREFIX}{market_id}:{asset_id}:{side}"
+    def _doc_key(market_id: str, asset_id: str, side: str, order_id: str) -> str:
+        return f"{DOC_PREFIX}{market_id}:{asset_id}:{side}:{order_id}"
+
+    def _build_pattern(self, market_id: Optional[str], asset_id: Optional[str], side: Optional[str]) -> str:
+        parts = [market_id or "*", asset_id or "*", side or "*", "*"]
+        return ":".join(parts)
+
+    def _record_ts(self, rec: "TradeRecord") -> float:
+        try:
+            return float(rec.match_ts or rec.created_ts or 0)
+        except Exception:
+            return 0
+
+    async def _iter_records(self, pattern: str, *, page_size: int = 1000) -> AsyncIterator["TradeRecord"]:
+        cursor: int | str = 0
+        while True:
+            cursor, members = await self._redis.sscan(TRADE_RECORDS_KEY, cursor=cursor, match=pattern, count=page_size)
+            if members:
+                doc_keys = [f"{DOC_PREFIX}{m}" for m in members]
+                raws = await self._redis.mget(doc_keys)
+                for raw in raws:
+                    if not raw:
+                        continue
+                    try:
+                        yield TradeRecord.model_validate_json(raw)
+                    except Exception:
+                        # skip malformed docs
+                        continue
+            if cursor in (0, "0"):
+                break
 
     # ---------- CRUD ----------
 
-    async def contains(self, market_id: str, asset_id: str, side: str) -> bool:
-        return await self._redis.sismember(TRADE_RECORDS_KEY, self._set_key(market_id, asset_id, side))
+    async def contains(self, market_id: str, asset_id: str, side: str, order_id) -> bool:
+        return await self._redis.sismember(TRADE_RECORDS_KEY, self._set_key(market_id, asset_id, side, order_id))
 
     async def add(self, rec: TradeRecord) -> None:
         """
@@ -42,8 +70,8 @@ class RedisTradeRecordStore:
         - store full TradeRecord JSON doc at DOC_PREFIX...
         - publish 'add' if new, 'update' if already existed
         """
-        skey = self._set_key(rec.market_id, rec.asset_id, rec.side)
-        dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side)
+        skey = self._set_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
+        dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
         raw = rec.model_dump_json()
 
         pipe = self._redis.pipeline(transaction=True)
@@ -54,24 +82,43 @@ class RedisTradeRecordStore:
         event = "add" if sadd_res == 1 else "update"
         await self._publish({"action": event, "key": skey, "trade_record": raw})
 
-    async def get(self, market_id: str, asset_id: str, side: str) -> Optional[TradeRecord]:
-        raw = await self._redis.get(self._doc_key(market_id, asset_id, side))
+    async def get(self, market_id: str, asset_id: str, side: str, order_id: str) -> Optional[TradeRecord]:
+        raw = await self._redis.get(self._doc_key(market_id, asset_id, side, order_id))
         if not raw:
             return None
         return TradeRecord.model_validate_json(raw)
 
+    async def get_latest(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None) -> Optional["TradeRecord"]:
+        pattern = self._build_pattern(market_id, asset_id, side)
+        best: Optional[TradeRecord] = None
+        best_ts: float = -1.0
+
+        async for rec in self._iter_records(pattern):
+            ts = self._record_ts(rec)
+            if ts > best_ts:
+                best = rec
+                best_ts = ts
+
+        return best
+
+    async def get_all(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None, *, sort_desc: bool = True) -> List["TradeRecord"]:
+        pattern = self._build_pattern(market_id, asset_id, side)
+        items = [rec async for rec in self._iter_records(pattern)]
+        items.sort(key=lambda rec: rec.created_ts, reverse=sort_desc)
+        return items
+
     async def update(self, rec: TradeRecord) -> None:
         """Simple upsert without re-publishing add/update differentiation"""
-        skey = self._set_key(rec.market_id, rec.asset_id, rec.side)
-        dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side)
+        skey = self._set_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
+        dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
         raw = rec.model_dump_json()
 
         await self._redis.set(dkey, raw)
         await self._publish({"action": "update", "key": skey, "trade_record": raw})
 
-    async def remove(self, market_id: str, asset_id: str, side: str) -> None:
-        skey = self._set_key(market_id, asset_id, side)
-        dkey = self._doc_key(market_id, asset_id, side)
+    async def remove(self, market_id: str, asset_id: str, side: str, order_id: str) -> None:
+        skey = self._set_key(market_id, asset_id, side, order_id)
+        dkey = self._doc_key(market_id, asset_id, side, order_id)
         pipe = self._redis.pipeline(transaction=True)
         pipe.srem(TRADE_RECORDS_KEY, skey)
         pipe.delete(dkey)

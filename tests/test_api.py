@@ -3,8 +3,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from polymarket_hunter.main import create_app
-from polymarket_hunter.api import slugs_router as slugs_mod
-from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
+from polymarket_hunter.api import market_router as slugs_mod
+from polymarket_hunter.core.subscriber.market_subscriber import MarketSubscriber
 
 
 class FakeStore:
@@ -39,7 +39,7 @@ def app():
     # Build polymarket_hunter with injected fake manager
 
     fake_store = FakeStore()
-    manager = SlugsSubscriber(fake_store)  # uses a real ws client but we won't start lifespan here
+    manager = MarketSubscriber(fake_store)  # uses a real ws client but we won't start lifespan here
 
     slugs_mod.get_manager = manager
     app = create_app()

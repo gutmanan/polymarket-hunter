@@ -1,106 +1,98 @@
-from decimal import Decimal
-from typing import Any
+from __future__ import annotations
 
-from polymarket_hunter.dal.datamodel.order_request import OrderRequest
+from datetime import datetime, timezone
+from html import escape
+from typing import Optional
+
+from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 
 
-def _as_dec(x: Any) -> Decimal:
+def _fmt_num(x: Optional[float], nd=3) -> str:
     try:
-        return Decimal(str(x))
+        return f"{float(x):.{nd}f}"
     except Exception:
-        return Decimal("0")
+        return "—"
 
+def _fmt_pct(filled: Optional[float], size: Optional[float]) -> str:
+    try:
+        if not size or size <= 0:
+            return "—"
+        r = max(min((filled or 0.0) / size, 1.0), 0.0)
+        return f"{r*100:.0f}%"
+    except Exception:
+        return "—"
 
-def format_order_message(req: OrderRequest, res: dict[str, Any]) -> str:
-    """
-    Unified order message formatter: success / partial / pending / fail.
-    Returns HTML-formatted Telegram message.
-    """
-    # Core fields
-    success = bool(res.get("success"))
-    status = str(res.get("status", "unknown")).lower()
-    order_id = res.get("orderID") or res.get("orderId") or ""
-    tx_hashes = res.get("transactionsHashes") or res.get("transactionHashes") or []
-    tx_link = ""
-    if tx_hashes:
-        tx_link = f"<a href='https://polygonscan.com/tx/{tx_hashes[0]}'>View Transaction</a>"
+def _fmt_ts(ts: Optional[float]) -> str:
+    if not ts:
+        return "—"
+    try:
+        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    except Exception:
+        return "—"
 
-    making = self._as_dec(res.get("makingAmount", "0"))
-    taking = self._as_dec(res.get("takingAmount", "0"))
+def _header(tr: TradeRecord) -> str:
+    if tr.error:
+        return "❌ <b>Order Failed</b>"
+    s = (tr.status or "").lower()
+    filled_ok = (tr.matched_amount or 0) >= (tr.size or 0) > 0
+    if s in {"matched", "filled", "success"} or filled_ok:
+        return "✅ <b>Order Filled</b>"
+    if tr.active and s in {"open", "pending", "booked", "partial", "partially_filled"}:
+        return "⏳ <b>Order Pending</b>"
+    return "📦 <b>Order Update</b>"
 
-    price = req.price
-    side = req.side
-    size = req.size
-    tif = req.action.time_in_force if req.action is not None else None
+def format_trade_record_message(tr: TradeRecord) -> str:
+    header = _header(tr)
 
-    # Optional enrichers (if present on your model)
-    context = getattr(req, "context", None)
-    market = getattr(context, "slug", None) or getattr(req, "market_id", None)
-    outcome = getattr(req.action, "outcome", None)
+    # Title
+    slug = escape(tr.slug or "")
+    outcome = escape(tr.outcome or "")
+    title = f"📊 <b>{slug}</b>" + (f" — {outcome}" if outcome else "")
 
-    # Decorative header
-    header = "✅ <b>Order Placed</b>"
-    if not success:
-        header = "❌ <b>Order Failed</b>"
-    elif status in {"partial", "partially_filled", "open", "pending", "booked"}:
-        header = "⏳ <b>Order Pending</b>"
+    # Intent
+    side = escape((tr.side or "").upper())
+    intent = f"🧭 <b>{side}</b> {_fmt_num(tr.size)} @ {_fmt_num(tr.price)}"
 
-    # Build the main lines
-    title_line = ""
-    if market and outcome:
-        title_line = f"📊 <b>{market}</b> — {outcome}\n"
-    elif market:
-        title_line = f"📊 <b>{market}</b>\n"
+    # Fill / Notional / Fees
+    filled = float(tr.matched_amount or 0.0)
+    notional = filled * float(tr.price or 0.0)
+    progress = f"📈 <b>Filled:</b> {_fmt_num(filled)} / {_fmt_num(tr.size)} ({_fmt_pct(tr.matched_amount, tr.size)})"
+    amounts = [f"💰 <b>Notional (USDC):</b> {_fmt_num(notional, nd=2)}", f"🎟️ <b>Tokens:</b> {_fmt_num(filled)}"]
 
-    # side/size/price
-    intent_line = f"🧭 <b>{side}</b> {size} @ {price:.3f}"
-    if tif:
-        intent_line += f" <i>({tif})</i>"
+    fee_line = ""
+    if tr.fee_rate_bps is not None:
+        try:
+            fee = notional * (float(tr.fee_rate_bps) / 10_000.0)
+            fee_line = f"🧾 <b>Fee:</b> {_fmt_num(fee, nd=4)} ({_fmt_num(tr.fee_rate_bps, nd=2)} bps)"
+        except Exception:
+            pass
 
-    # status/amounts (only show making/taking if non-zero or useful)
-    status_line = f"📦 <b>Status:</b> {status.capitalize() if status != 'unknown' else '—'}"
+    # Status / IDs / Links / Time
+    status = escape((tr.status or "UNKNOWN").upper())
+    st = f"📦 <b>Status:</b> {status}"
+    oid = f"🧾 <b>TX Hash:</b> <code>{escape(tr.transaction_hash or '')}</code>"
+    tmatch = f"🕒 <b>Matched:</b> {_fmt_ts(tr.matched_ts)}"
 
-    amounts = []
-    if making > 0:
-        amounts.append(f"💰 <b>Making:</b> {making.normalize():f}")
-    if taking > 0:
-        amounts.append(f"💵 <b>Taking:</b> {taking.normalize():f}")
-    amounts_line = "\n".join(amounts)
+    tx_line = ""
+    if tr.transaction_hash:
+        tx = escape(tr.transaction_hash)
+        tx_line = f"🔗 <a href='https://polygonscan.com/tx/{tx}'>Polygonscan</a>"
 
-    # order id / tx
-    id_line = f"🧾 <b>Order ID:</b> <code>{order_id}</code>" if order_id else ""
-    tx_line = f"🔗 {tx_link}" if tx_link else ""
+    err_line = ""
+    if tr.error:
+        err_line = f"⚠️ <b>Error:</b> {escape(str(tr.error))[:500]}"
 
-    # Failure case
-    if not success:
-        err = res.get("errorMsg") or res.get("error") or "Unknown error"
-        return (
-            f"{header}\n"
-            f"{title_line}"
-            f"{intent_line}\n"
-            f"⚠️ <b>Error:</b> {err}\n"
-            f"{id_line}\n"
-        ).strip()
-
-    # Pending / Partial
-    if status in {"partial", "partially_filled", "open", "pending", "booked"}:
-        return (
-            f"{header}\n"
-            f"{title_line}"
-            f"{intent_line}\n"
-            f"{status_line}\n"
-            f"{amounts_line}\n"
-            f"{id_line}\n"
-            f"{tx_line}"
-        ).strip()
-
-    # Success / Matched / Filled
-    return (
-        f"{header}\n"
-        f"{title_line}"
-        f"{intent_line}\n"
-        f"{status_line}\n"
-        f"{amounts_line}\n"
-        f"{id_line}\n"
-        f"{tx_line}"
-    ).strip()
+    parts = [
+        header,
+        title,
+        intent,
+        progress,
+        "\n".join(amounts),
+        fee_line,
+        st,
+        oid,
+        tx_line,
+        tmatch,
+        err_line,
+    ]
+    return "\n".join(p for p in parts if p).strip() + "\n"

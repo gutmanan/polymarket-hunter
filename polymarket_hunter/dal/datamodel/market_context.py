@@ -26,8 +26,6 @@ class MarketContext(BaseModel):
     clob_token_ids: list[str]
     outcome_prices: dict[str, dict[str, Any]]
     outcome_assets: dict[str, str]
-    tags: list[str]
-    raw: Optional[dict[str, Any]] = None
+    tags: set[str]
+    event_ts: float = Field(default_factory=time.time)
     created_ts: float = Field(default_factory=time.time)
-    updated_ts: float = Field(default_factory=time.time)
-

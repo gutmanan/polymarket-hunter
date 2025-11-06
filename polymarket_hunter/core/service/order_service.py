@@ -1,13 +1,10 @@
-import time
-from typing import Any, Dict
+from typing import Any
 
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
-from polymarket_hunter.core.notifier.formatter.place_order_formatter import format_order_message
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.datamodel.strategy_action import OrderType, Side
-from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
@@ -27,48 +24,42 @@ class OrderService:
         self._notifier = RedisNotificationStore()
 
     async def execute_order(self, payload: dict[str, Any]):
-        if payload["action"] in {"add", "update"}:
+        if payload["action"] not in {"add", "update"}:
+            return
+
+        try:
             req = OrderRequest.model_validate_json(payload["order"])
-            if req.action.order_type == OrderType.MARKET:
-                res = self._clob.execute_market_order(
-                    token_id=req.asset_id,
-                    size=req.size,
-                    side=req.side,
-                    tif=req.action.time_in_force
-                )
-            elif req.action.order_type == OrderType.LIMIT:
-                res = self._clob.execute_limit_order(
-                    token_id=req.asset_id,
-                    price=req.price,
-                    size=req.size,
-                    side=req.side,
-                    tif=req.action.time_in_force
-                )
-            else:
-                raise NotImplementedError
+        except Exception as e:
+            logger.warning("Invalid OrderRequest payload: %s", e, exc_info=True)
+            return
 
-            trade = await self._trade_store.get(req.market_id, req.asset_id, req.side)
-            if trade:
-                trade = self._update_trade_record(trade, res)
-                await self._trade_store.update(trade)
+        if req.action.order_type == OrderType.MARKET:
+            res = self._clob.execute_market_order(
+                token_id=req.asset_id,
+                size=req.size,
+                side=req.side,
+                tif=req.action.time_in_force
+            )
+        elif req.action.order_type == OrderType.LIMIT:
+            res = self._clob.execute_limit_order(
+                token_id=req.asset_id,
+                price=req.price,
+                size=req.size,
+                side=req.side,
+                tif=req.action.time_in_force
+            )
+        else:
+            raise NotImplementedError
 
-            is_success = bool(res.get("success"))
-            if is_success == (req.side == Side.SELL):
-                await self._order_store.remove(req.market_id, req.asset_id)
+        is_success = bool(res.get("success"))
 
-            if is_success:
-                await self._notifier.send_message(format_order_message(req, res))
+        """
+        1. we remove the order from the order_store if it is a sell order and the order was successful. 
+        2. we also remove the order from the order_store if it is a buy order and the order was not successful.
+        * so we can try to sell again or buy again.
+        """
+        if is_success == (req.side == Side.SELL):
+            await self._order_store.remove(req.market_id, req.asset_id)
 
-    # ---------- Helpers ----------
-
-    def _update_trade_record(self, trade: TradeRecord, res: Dict[str, Any]) -> TradeRecord:
-        return trade.model_copy(update={
-            "order_id": res.get("orderID") or res.get("orderId"),
-            "status": res.get("status", trade.status),
-            "taking_amount": float(res.get("takingAmount") or 0),
-            "making_amount": float(res.get("makingAmount") or 0),
-            "txs": res.get("transactionsHashes") or res.get("transactionHashes") or [],
-            "error": res.get("errorMsg") or res.get("error") or "",
-            "raw": res,
-            "updated_ts": time.time(),
-        })
+        if not is_success:
+            logger.warning(f"Order failed: {req.context.slug}")

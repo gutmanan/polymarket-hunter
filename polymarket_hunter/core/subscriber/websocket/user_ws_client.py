@@ -21,13 +21,13 @@ from polymarket_hunter.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
-class MarketWSClient:
+class UserWSClient:
 
     def __init__(self):
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
-        self._assets_ids = []
+        self._market_ids = []
 
         self.markets = []
         self.ctx = MessageContext(
@@ -38,7 +38,7 @@ class MarketWSClient:
             data_client=self._data,
         )
 
-        self._actors = ActorManager(self.ctx)
+        self._actors = ActorManager(self.ctx, "user")
 
         self._task: asyncio.Task | None = None
         self._stop = asyncio.Event()
@@ -47,13 +47,13 @@ class MarketWSClient:
 
         self._update_lock = asyncio.Lock()
 
-    # ----- public API -----
+    # ---------- Public API ----------
 
     async def start(self) -> None:
         if self._task and not self._task.done():
             return
         self._stop.clear()
-        self._task = asyncio.create_task(self._run(), name="wsclient-runner")
+        self._task = asyncio.create_task(self._run(), name="user-wsclient-runner")
 
     async def stop(self) -> None:
         self._stop.set()
@@ -72,7 +72,7 @@ class MarketWSClient:
             self.markets = await self._slugs_to_markets(slugs)
             if not self.markets:
                 return
-            self._assets_ids = [a for m in self.markets for a in json.loads(m.get("clobTokenIds") or [])]
+            self._market_ids = [m["conditionId"] for m in self.markets]
             self.ctx.update_markets(self.markets)
             self._restart.set()
             if self._ws:
@@ -82,22 +82,21 @@ class MarketWSClient:
     # ----- internals -----
 
     async def _run(self) -> None:
-        backoff = 100.0
+        backoff = 10.0
         while not self._stop.is_set():
             try:
                 await self._connect_and_pump()
                 self._restart.clear()
-                backoff = 100.0
+                backoff = 10.0
             except asyncio.CancelledError:
                 raise
             except Exception as e:
                 logger.warning("WS client error: %s", e)
                 await asyncio.sleep(backoff)
-                backoff = min(backoff * 2, 30)
 
     async def _connect_and_pump(self) -> None:
         async with websockets.connect(
-            settings.POLYMARKET_WS_URL,
+            settings.POLYMARKET_WS_URL + "/user",
             ping_interval=20,
             ping_timeout=30,
             max_queue=1000,     # guard on incoming frames
@@ -132,10 +131,12 @@ class MarketWSClient:
         self._ws = None
 
     async def _send_subscribe(self, ws: WebSocketClientProtocol) -> None:
-        payload = {"assets_ids": self._assets_ids, "type": "markets"}
+        api_key = self._clob.client.derive_api_key()
+        auth = {"apikey": api_key.api_key, "secret": api_key.api_secret, "passphrase": api_key.api_passphrase}
+        payload = {"auth": auth, "markets": self._market_ids, "type": "user"}
         try:
             await ws.send(json.dumps(payload))
-            logger.info("WS subscribe sent: %d markets -> %d assets", len(self.markets), len(self._assets_ids))
+            logger.info("WS subscribe sent: %d markets", len(self.markets))
         except Exception as e:
             logger.warning("Failed to send subscribe: %s", e)
 

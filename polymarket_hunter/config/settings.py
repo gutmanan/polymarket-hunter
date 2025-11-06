@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     PORT: int = Field(default=8080, env="PORT")
 
     # Polymarket
-    POLYMARKET_WS_URL: str = Field(default="wss://ws-subscriptions-clob.polymarket.com/ws/market", env="POLYMARKET_WS_URL")
+    POLYMARKET_WS_URL: str = Field(default="wss://ws-subscriptions-clob.polymarket.com/ws", env="POLYMARKET_WS_URL")
     DATA_HOST: str = Field(default="https://data-api.polymarket.com", env="DATA_HOST")
     GAMMA_HOST: str = Field(default="https://gamma-api.polymarket.com", env="GAMMA_HOST")
     CLOB_HOST: str = Field(default="https://clob.polymarket.com", env="CLOB_HOST")

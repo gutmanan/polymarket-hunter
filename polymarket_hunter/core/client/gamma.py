@@ -1,4 +1,3 @@
-import json
 import os
 from functools import lru_cache
 from typing import Any, Dict, Optional, AsyncGenerator
@@ -19,7 +18,7 @@ class GammaClient:
 
     # ---------- Public API ----------
 
-    async def get_market_by_slug(self, slug: str) -> Any:
+    async def get_market_by_slug(self, slug: str) -> dict[str, Any]:
         url = f"{self.markets_endpoint}/slug/{slug}"
         response = await self._client.get(url, params={"include_tag": True})
         response.raise_for_status()
@@ -75,8 +74,8 @@ if __name__ == "__main__":
 
     async def main():
         gamma = get_gamma_client()
-        res = await gamma.get_market_by_slug("will-the-price-of-bitcoin-be-between-118000-120000-on-november-2")
-        print(json.dumps(res))
+        res = await gamma.get_market_by_slug("bitcoin-up-or-down-november-5-12pm-et")
+        print(res)
         await gamma.aclose()
 
     asyncio.run(main())

@@ -22,13 +22,11 @@ class MessageHandler(Protocol):
         """Do the work. Raise only for unexpected errors."""
         ...
 
-
 class MessageContext:
     """
     Shared context DI container for handlers.
     Put things like logger, caches, clients, config, queues, etc.
     """
-
     def __init__(self, *, logger, markets: list[dict[str, Any]], gamma_client=None, clob_client=None, data_client=None):
         self.logger = logger
 
@@ -41,7 +39,6 @@ class MessageContext:
 
     def update_markets(self, markets: list[dict[str, Any]]) -> None:
         self.markets = to_map(markets, key="conditionId")
-
 
 class MessageRouter:
 

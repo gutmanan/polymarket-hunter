@@ -4,8 +4,7 @@ from typing import Dict, Any
 
 from py_clob_client.order_builder.constants import BUY, SELL
 
-from polymarket_hunter.core.service.resolution_service import ResolutionService
-from polymarket_hunter.core.strategy.strategy_evaluator import MarketContext
+from polymarket_hunter.core.strategy.strategy_evaluator import MarketContext, StrategyEvaluator
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageHandler, MessageContext
 from polymarket_hunter.utils.market import q3
 
@@ -13,8 +12,8 @@ from polymarket_hunter.utils.market import q3
 class PriceChangeHandler(MessageHandler):
     def __init__(self):
         # price_map[market_id][asset_id] -> {"outcome": str, "buy": Decimal, "sell": Decimal}
-        self.price_map: Dict[str, Dict[str, Dict[str, Any]]] = {}
-        self._resolver = ResolutionService()
+        self._price_map: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        self._evaluator = StrategyEvaluator()
         self._lock = threading.Lock()
 
     event_types = ["price_change"]
@@ -25,7 +24,7 @@ class PriceChangeHandler(MessageHandler):
         if market:
             self.update_prices(market, msg, ctx)
             context = self.build_context(market, msg)
-            await self._resolver.place_order(context)
+            await self._evaluator.evaluate(context)
 
     # ---------- pricing ----------
 
@@ -34,7 +33,7 @@ class PriceChangeHandler(MessageHandler):
         token_ids = json.loads(market["clobTokenIds"])
         outcomes = json.loads(market["outcomes"])
         with self._lock:
-            market_book = self.price_map.setdefault(market_id, {})
+            market_book = self._price_map.setdefault(market_id, {})
             for pc in msg["price_changes"]:
                 asset_id = pc["asset_id"]
                 try:
@@ -71,8 +70,8 @@ class PriceChangeHandler(MessageHandler):
             clob_token_ids=json.loads(market["clobTokenIds"]),
             outcome_prices=self.get_outcome_prices(market["conditionId"]),
             outcome_assets=self.get_outcome_assets(market["conditionId"]),
-            tags=[t["label"] for t in market["tags"]],
-            raw=msg
+            tags=set([t["label"] for t in market["tags"]]),
+            event_ts=msg["timestamp"]
         )
 
     def get_outcome_prices(self, market_id: str) -> dict[str, dict[str, Any]]:
@@ -80,10 +79,10 @@ class PriceChangeHandler(MessageHandler):
             data["outcome"]: {
                 BUY: data[BUY] if BUY in data.keys() else 0,
                 SELL: data[SELL] if SELL in data.keys() else 0
-            } for asset_id, data in self.price_map[market_id].items()
+            } for asset_id, data in self._price_map[market_id].items()
         }
 
     def get_outcome_assets(self, market_id: str) -> dict[str, str]:
         return {
-            data["outcome"]: asset_id for asset_id, data in self.price_map[market_id].items()
+            data["outcome"]: asset_id for asset_id, data in self._price_map[market_id].items()
         }

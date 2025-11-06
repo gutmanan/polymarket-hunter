@@ -1,5 +1,4 @@
 import asyncio
-import re
 from datetime import datetime, timezone, time
 
 from polymarket_hunter.core.client.gamma import get_gamma_client
@@ -11,7 +10,7 @@ ISOZ_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 class HourlyMarketsTask(BaseIntervalTask):
     def __init__(self, slugs_subscriber):
-        super().__init__("_daily_markets", minutes=3, misfire_grace_time=120)
+        super().__init__("_daily_markets", minutes=5, misfire_grace_time=120)
         self._slugs_subscriber = slugs_subscriber
         self._gamma = get_gamma_client()
 
@@ -27,14 +26,14 @@ class HourlyMarketsTask(BaseIntervalTask):
                 'closed': False,
                 'archived': False,
                 'include_tag': True,
-                'tag_id': 101757, # Recurring markets tag id
+                # 'tag_id': 101757, # Recurring markets tag id
                 "end_date_min": now_iso,
                 "end_date_max": end_iso,
                 "order": "startDate",
                 "ascending": False,
             }
         )
-        return self._filtered_slugs(markets, exclude=r"^[a-z0-9]+-updown-15m-\d+$")
+        return self._filtered_slugs(markets)
 
     async def add_missing_current_markets(self) -> None:
         want = await self.get_current_markets()
@@ -53,24 +52,16 @@ class HourlyMarketsTask(BaseIntervalTask):
         await self.add_missing_current_markets()
         await self.prune_expired()
 
-    def _filtered_slugs(
-            self,
-            markets: list[dict],
-            include: str | None = None,
-            exclude: str | None = None
-    ) -> set[str]:
-        include_re = re.compile(include) if include else None
-        exclude_re = re.compile(exclude) if exclude else None
-
+    def _filtered_slugs(self, markets: list[dict]) -> set[str]:
         slugs = set()
         for m in markets:
             slug = m.get("slug")
+            tags = [t["label"] for t in m["tags"]],
             if not slug:
                 continue
-            if include_re and not include_re.search(slug):
+            if m.get("negRisk"):
                 continue
-            if exclude_re and exclude_re.search(slug):
+            if any(tag in tags for tag in ("Sports", "15M")):
                 continue
             slugs.add(slug)
-
         return slugs

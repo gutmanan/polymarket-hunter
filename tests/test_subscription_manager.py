@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 
-from polymarket_hunter.core.subscriber.slug_subscriber import SlugsSubscriber
+from polymarket_hunter.core.subscriber.market_subscriber import MarketSubscriber
 
 
 class FakeStore:
@@ -48,7 +48,7 @@ class FakeWSClient:
 @pytest.mark.asyncio
 async def test_diff_update_triggers_only_on_changes(monkeypatch):
     store = FakeStore()
-    mgr = SlugsSubscriber(store)
+    mgr = MarketSubscriber(store)
     # replace internal ws client with fake
     fake_ws = FakeWSClient()
     mgr._ws_client = fake_ws  # type: ignore[attr-defined]

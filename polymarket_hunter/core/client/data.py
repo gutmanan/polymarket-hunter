@@ -1,15 +1,14 @@
 import asyncio
 import os
-from ast import literal_eval
 from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
 from dotenv import load_dotenv
 from web3 import Web3
-from web3.exceptions import ContractLogicError, Web3RPCError
 
-from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32
+from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32, \
+    MAIN_EXCHANGE_ADDRESS, NEG_RISK_MARKETS_ADDRESS, NEG_RISK_ADAPTER_ADDRESS
 from polymarket_hunter.utils.logger import setup_logger
 from polymarket_hunter.utils.market import retryable, with_timeout
 
@@ -44,16 +43,39 @@ class DataClient:
 
     def get_positions(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
-        Current (open) positions for the wallet/user.
-        NOTE: If you trade via a funder/proxy, pass the *funder* address here.
+        Fetch open positions for a given user wallet.
+        Gracefully handles network errors, timeouts, and bad responses.
         """
         params = dict(querystring_params or {})
-        addr = user if user is not None else self.address
-        # Support both param names used by different deployments
+        addr = user or self.address
         params["user"] = addr
         params["wallet"] = addr
-        response = httpx.get(self.positions_endpoint, params=params)
-        return response.json()
+
+        try:
+            response = httpx.get(self.positions_endpoint, params=params, timeout=10.0)
+            response.raise_for_status()
+
+            try:
+                return response.json()
+            except Exception as e:
+                logger.error("Invalid JSON in positions response: %s", e, exc_info=True)
+                return {"error": "invalid_json", "details": str(e), "raw_text": response.text}
+
+        except httpx.TimeoutException:
+            logger.warning("Positions request timed out for %s", addr)
+            return {"error": "timeout", "user": addr}
+
+        except httpx.ConnectError as e:
+            logger.error("Connection error getting positions for %s: %s", addr, e)
+            return {"error": "connection_failed", "user": addr, "details": str(e)}
+
+        except httpx.HTTPStatusError as e:
+            logger.warning("Bad status %s for positions(%s): %s", e.response.status_code, addr, e)
+            return {"error": "bad_status", "status_code": e.response.status_code, "text": e.response.text}
+
+        except Exception as e:
+            logger.exception("Unexpected error getting positions for %s", addr)
+            return {"error": "unexpected", "details": str(e)}
 
     @retryable()
     async def get_closed_positions_retry(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None):
@@ -72,12 +94,12 @@ class DataClient:
             params.setdefault("from", params["since"])  # some deployments
             params.setdefault("start", params["since"])  # legacy
         if "until" in params:
-            params.setdefault("to", params["until"])    # some deployments
-            params.setdefault("end", params["until"])   # legacy
+            params.setdefault("to", params["until"])  # some deployments
+            params.setdefault("end", params["until"])  # legacy
         response = httpx.get(self.closed_positions_endpoint, params=params)
         return response.json()
 
-    def get_portfolio_value(self, user: str = None) -> Any:
+    def get_portfolio_value(self, user: str = None) -> list[dict[str, float]]:
         """
         Aggregated wallet value: totalValue, cash, unsettled, pnl, etc.
         """
@@ -88,9 +110,23 @@ class DataClient:
         """
         USDC balance (Polygon).
         """
-        usdc = self.w3.eth.contract(address=USDC_ADDRESS, abi=USDC_ABI)
-        raw = usdc.functions.balanceOf(user if user is not None else self.address).call()
-        return raw / 10 ** USDC_DECIMALS
+        usdc = self.w3.eth.contract(address=Web3.to_checksum_address(USDC_ADDRESS), abi=USDC_ABI)
+        user_account = Web3.to_checksum_address(user if user is not None else self.address)
+        balance = usdc.functions.balanceOf(user_account).call()
+        return balance / 10 ** USDC_DECIMALS
+
+    def get_usdc_allowance(self, user: str = None):
+        """
+        USDC allowance (Polygon).
+        """
+        user_address = Web3.to_checksum_address(user if user is not None else self.address)
+        usdc = self.w3.eth.contract(address=Web3.to_checksum_address(USDC_ADDRESS), abi=USDC_ABI)
+        allowances = {}
+        for index, address in enumerate([MAIN_EXCHANGE_ADDRESS, NEG_RISK_MARKETS_ADDRESS, NEG_RISK_ADAPTER_ADDRESS]):
+            address_cksum = Web3.to_checksum_address(address)
+            allowance = usdc.functions.allowance(user_address, address_cksum).call()
+            allowances[index] = allowance
+        return allowances
 
     def get_trades(self, user: str = None, querystring_params: Optional[Dict[str, Any]] = None) -> Any:
         """
@@ -188,6 +224,7 @@ class DataClient:
             logger.error("CTF check failed for %s: %s", condition_id, e)
             return False
 
+
 @lru_cache(maxsize=1)
 def get_data_client() -> DataClient:
     return DataClient()
@@ -195,11 +232,5 @@ def get_data_client() -> DataClient:
 
 if __name__ == "__main__":
     client = DataClient()
-    for p in client.get_positions():
-        try:
-            res = client.redeem_position(p["conditionId"],[1, 2])
-            print(res)
-        except ContractLogicError as e:
-            print(e.message)
-        except Web3RPCError as e:
-            print(literal_eval(e.message).get("message"))
+    print(client.get_usdc_balance())
+    print(client.get_portfolio_value())

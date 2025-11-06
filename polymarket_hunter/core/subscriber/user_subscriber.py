@@ -1,18 +1,18 @@
 import asyncio
 from typing import Set
 
-from polymarket_hunter.core.subscriber.websocket.ws_client import MarketWSClient
+from polymarket_hunter.core.subscriber.websocket.user_ws_client import UserWSClient
 from polymarket_hunter.dal.slug_store import RedisSlugStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-class SlugsSubscriber:
+class UserSubscriber:
 
     def __init__(self):
         self._store = RedisSlugStore()
-        self._ws_client = MarketWSClient()
+        self._ws_client = UserWSClient()
         self._task: asyncio.Task | None = None
         self._events_task: asyncio.Task | None = None
         self._lock = asyncio.Lock()
@@ -63,7 +63,7 @@ class SlugsSubscriber:
                 return
             removed = self._slugs - new_slugs
             added = new_slugs - self._slugs
-            logger.info(f"Updating slugs; +{len(added)} -{len(removed)}")
+            logger.info(f"Updating (USER) slugs; +{len(added)} -{len(removed)}")
             self._slugs = set(new_slugs)
             # update ws client with full slug list; it will restart connection
             await self._ws_client.update_slugs(sorted(self._slugs))

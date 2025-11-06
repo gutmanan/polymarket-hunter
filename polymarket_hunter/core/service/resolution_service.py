@@ -1,33 +1,26 @@
 import time
-import uuid
 from functools import lru_cache
 from typing import List, Any, Dict, Tuple
 
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
-from polymarket_hunter.core.strategy.strategy_evaluator import StrategyEvaluator
-from polymarket_hunter.dal.datamodel.market_context import MarketContext
-from polymarket_hunter.dal.datamodel.order_request import OrderRequest
-from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
-from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
+from polymarket_hunter.core.service.trade_service import TradeService
 from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import market_has_ended, time_left_sec
+from polymarket_hunter.utils.market import market_has_ended
 
 logger = setup_logger(__name__)
 
 STALE_ORDER_SECONDS = 300
-RESOLUTION_BUFFER_SECONDS = 10      # do not trade last 10 sec
 
 class ResolutionService:
     def __init__(self):
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
-        self._order_store = RedisOrderRequestStore()
         self._trade_store = RedisTradeRecordStore()
-        self._evaluator = StrategyEvaluator()
+        self._trade_service = TradeService()
 
     # ---------- utilities ----------
 
@@ -118,42 +111,6 @@ class ResolutionService:
                 results_fail.append((cid or "?", e, p))
 
         return {"ok": results_ok, "fail": results_fail}
-
-    async def place_order(self, context: MarketContext):
-        if time_left_sec(context) <= RESOLUTION_BUFFER_SECONDS:
-            return
-
-        for outcome, asset_id in context.outcome_assets.items():
-            enter_request = await self._order_store.get(context.condition_id, asset_id)
-            request = await self._evaluator.should_exit(context, outcome, enter_request) if enter_request else await self._evaluator.should_enter(context, outcome)
-            if request:
-                trade = self._build_trade_record(request)
-                await self._trade_store.add(trade)
-                await self._order_store.add(request)
-
-    # ---------- Helpers ----------
-
-    def _build_trade_record(self, req: OrderRequest) -> TradeRecord:
-        return TradeRecord(
-            id=uuid.uuid4().hex,
-            market_id=req.market_id,
-            asset_id=req.asset_id,
-            outcome=req.outcome,
-            side=req.side,
-            strategy=req.strategy_name,
-            rule=req.rule_name,
-            spread=req.context.spread,
-            liquidity=req.context.liquidity,
-            competitive=req.context.competitive,
-            one_hour_price_change=req.context.one_hour_price_change,
-            one_day_price_change=req.context.one_day_price_change,
-            price=req.price,
-            size=req.size,
-            order_type=req.action.order_type,
-            tif=req.action.time_in_force,
-            ingested_ts=req.context.raw["timestamp"],
-            evaluated_ts=req.context.created_ts
-        )
 
 @lru_cache(maxsize=1)
 def get_resolution_service() -> ResolutionService:

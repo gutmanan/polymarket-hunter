@@ -15,10 +15,10 @@ class ReportNotifierTask(BaseIntervalTask):
         self._notifier = RedisNotificationStore()
 
     async def run(self):
-        report = await self._reporter.generate_report(hours_back=240)
+        report = self._reporter.generate_summary(hours_back=240)
         await self._notifier.send_message(report)
 
 
-if "__main__" == __name__:
+if __name__ == "__main__":
     report_notifier_task = ReportNotifierTask()
     asyncio.run(report_notifier_task.run())

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 from datetime import datetime, timezone, timedelta
 from functools import lru_cache
@@ -6,7 +7,7 @@ from typing import Any, Dict, Optional, List
 
 from dotenv import load_dotenv
 from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OrderBookSummary, OpenOrderParams
+from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OrderBookSummary, OpenOrderParams, TradeParams
 from py_clob_client.constants import POLYGON
 from py_clob_client.exceptions import PolyApiException
 from web3 import Web3
@@ -107,6 +108,12 @@ class CLOBClient:
 
     # ---------- orders ----------
 
+    def get_trade(self, trade_id: str):
+        trades = self.client.get_trades(params=TradeParams(id=trade_id))
+        if trades:
+            return trades[0]
+        return None
+
     def get_order(self, order_id: str):
         return self.client.get_order(order_id=order_id)
 
@@ -127,7 +134,7 @@ class CLOBClient:
         try:
             args = OrderArgs(token_id=token_id, price=price, size=size, side=side)
             signed = self.client.create_order(args)
-            return self.client.post_order(signed)
+            return self.client.post_order(signed, orderType=tif)
         except PolyApiException as e:
             logger.error(f"Unable to place limit order: {e}",)
             return {
@@ -168,37 +175,16 @@ class CLOBClient:
                 "error": e.error_msg
             }
 
-    def compute_expiration(
-            self,
-            *,
-            ttl: timedelta | float | int | None = None,
-            absolute: datetime | None = None,
-            as_millis: bool = False,
-    ) -> int:
-        now = datetime.now(tz=timezone.utc)
-
-        if ttl is not None and absolute is not None:
-            raise ValueError("Provide either ttl or absolute, not both.")
-
-        if ttl is not None:
-            ttl_td = ttl if isinstance(ttl, timedelta) else timedelta(seconds=float(ttl))
-            expiry = now + SECURITY_PAD + ttl_td + SKEW_PAD
-        elif absolute is not None:
-            target = absolute.astimezone(timezone.utc)
-            min_ok = now + SECURITY_PAD + SKEW_PAD
-            expiry = target if target >= min_ok else min_ok
-        else:
-            expiry = now + SECURITY_PAD + SKEW_PAD
-
-        epoch = expiry.timestamp()
-        return int(round(epoch * 1000)) if as_millis else int(round(epoch))
-
-
 @lru_cache(maxsize=1)
 def get_clob_client() -> CLOBClient:
     return CLOBClient()
 
 if __name__ == "__main__":
     client = get_clob_client()
-    for o in client.get_orders():
-        print(o)
+    # for o in client.get_orders():
+    #     print(json.dumps(o))
+    res = client.get_order("0x455b2c8f1cf468ccbf464863f34f2e3596ac2a61098ade18ec31c516a6736cf2")
+    print(json.dumps(res))
+    for tid in res["associate_trades"]:
+        t = client.get_trade(tid)
+        print(json.dumps(t))
