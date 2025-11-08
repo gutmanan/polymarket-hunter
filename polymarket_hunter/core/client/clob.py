@@ -19,19 +19,6 @@ from polymarket_hunter.utils.market import with_timeout, retryable
 load_dotenv()
 logger = setup_logger(__name__)
 
-SECURITY_PAD = timedelta(seconds=60)
-SKEW_PAD = timedelta(seconds=3)
-
-
-def parse_iso8601(s: str) -> datetime:
-    """Python 3.10-friendly parse for timestamps like 2020-11-04T00:00:00Z."""
-    if not s:
-        # naive max future to pass "is_live"
-        return datetime.max.replace(tzinfo=timezone.utc)
-    if s.endswith("Z"):
-        s = s[:-1] + "+00:00"
-    return datetime.fromisoformat(s)
-
 
 class CLOBClient:
 
@@ -66,16 +53,6 @@ class CLOBClient:
         """Wire ERC20/1155 approvals if you place on-chain via the exchange contracts.
            Left as a placeholder since most CLOB ops don’t need manual calls here."""
         pass
-
-    # ---------- mapping ----------
-
-    @staticmethod
-    def _safe_float(d: Dict[str, Any], key: str, default: float = 0.0) -> float:
-        try:
-            v = d.get(key, default)
-            return float(v) if v is not None else default
-        except Exception:
-            return default
 
     # ---------- market & trades ----------
 
@@ -138,6 +115,7 @@ class CLOBClient:
         except PolyApiException as e:
             logger.error(f"Unable to place limit order: {e}",)
             return {
+                "success": False,
                 "code": e.status_code,
                 "error": e.error_msg
             }
@@ -150,10 +128,11 @@ class CLOBClient:
             args = MarketOrderArgs(token_id=token_id, amount=size, side=side)
             logger.info(f"Market order args: {args}")
             signed = self.client.create_market_order(args)
-            return self.client.post_order(signed)
+            return self.client.post_order(signed, orderType=tif)
         except PolyApiException as e:
             logger.error(f"Unable to place market order: {e}")
             return {
+                'success': False,
                 "code": e.status_code,
                 "error": e.error_msg
             }

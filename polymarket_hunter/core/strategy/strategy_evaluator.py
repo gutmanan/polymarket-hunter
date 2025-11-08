@@ -17,7 +17,8 @@ from polymarket_hunter.utils.logger import setup_logger
 from polymarket_hunter.utils.market import prepare_market_amount, time_left_sec
 
 logger = setup_logger(__name__)
-RESOLUTION_BUFFER_SECONDS = 10      # do not trade last 10 sec
+EXIT_BUFFER_SECONDS = 10      # do not trade last 10 sec
+ENTER_BUFFER_SECONDS = 120    # do not trade last 10 sec
 
 
 class StrategyEvaluator:
@@ -48,6 +49,9 @@ class StrategyEvaluator:
         return existing_trade if existing_trade and existing_trade.active else None
 
     async def should_enter(self, context: MarketContext, outcome: str) -> Optional[OrderRequest]:
+        if time_left_sec(context) <= ENTER_BUFFER_SECONDS:
+            return None
+
         result = self._find_action_for_context(context, outcome)
         if result is None:
             return None
@@ -88,6 +92,9 @@ class StrategyEvaluator:
         )
 
     async def should_exit(self, context: MarketContext, outcome: str, enter_request: OrderRequest) -> Optional[OrderRequest]:
+        if time_left_sec(context) <= EXIT_BUFFER_SECONDS:
+            return None
+
         market_id = enter_request.market_id
         asset_id = enter_request.asset_id
 
@@ -141,9 +148,6 @@ class StrategyEvaluator:
         )
 
     async def evaluate(self, context: MarketContext):
-        if time_left_sec(context) <= RESOLUTION_BUFFER_SECONDS:
-            return
-
         for outcome, asset_id in context.outcome_assets.items():
             enter_request = await self._order_store.get(context.condition_id, asset_id)
             request = await self.should_exit(context, outcome, enter_request) if enter_request else await self.should_enter(context, outcome)

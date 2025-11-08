@@ -5,42 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/api/market_router.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/trade_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/trade_subscriber.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/user_subscriber.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/order_handler.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/user_ws_client.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/slugs_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/trades_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/constants.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/data.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/gamma.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/gamma.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/place_order_formatter.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/place_order_formatter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/report_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/report_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/slug_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/market_subscriber.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/actor_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/actor_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/handlers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/trade_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/trade_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/market_context.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/market_context.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dependencies/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dependencies/slugs_subscriber_dep.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_subscription_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_subscription_manager.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,6 +30,18 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;gutmanan&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:gutmanan/polymarket-hunter.git&quot;,
+    &quot;accountId&quot;: &quot;d59e8d69-2a94-4dc5-adf8-8eb72d8b6ff8&quot;
+  }
+}</component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="B6OjWY3k" />
   </component>
@@ -93,6 +73,7 @@
     "Python.trade_service.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
@@ -333,8 +314,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-PY-251.28774.16" />
-        <option value="bundled-python-sdk-14d54ed193d7-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.28774.16" />
+        <option value="bundled-python-sdk-4e2b1448bda8-9a97661f3031-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.27397.106" />
       </set>
     </attachedChunks>
   </component>
@@ -369,6 +349,7 @@
       <workItem from="1761931821601" duration="109521000" />
       <workItem from="1762254038503" duration="35343000" />
       <workItem from="1762338999716" duration="56466000" />
+      <workItem from="1762522520796" duration="3725000" />
     </task>
     <servers />
   </component>

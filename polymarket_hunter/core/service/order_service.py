@@ -60,6 +60,3 @@ class OrderService:
         """
         if is_success == (req.side == Side.SELL):
             await self._order_store.remove(req.market_id, req.asset_id)
-
-        if not is_success:
-            logger.warning(f"Order failed: {req.context.slug}")
