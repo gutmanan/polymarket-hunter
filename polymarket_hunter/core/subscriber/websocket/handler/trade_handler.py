@@ -71,10 +71,10 @@ class TradeHandler(MessageHandler):
             )
             return tr
 
-        new_matched = tr.matched_amount + size_mat
+        new_matched = size_mat or tr.matched_amount
 
         bumped_match_ts = tr.matched_ts
-        if new_matched > (tr.matched_amount or 0.0):
+        if new_matched != (tr.matched_amount or 0.0):
             bumped_match_ts = msg.get("match_time") or tr.matched_ts
 
         raw_events = tr.raw_events
@@ -89,6 +89,7 @@ class TradeHandler(MessageHandler):
             "status": status or tr.status,
             "price": price or tr.price,
             "size": size_orig or tr.size,
+            "trader_side": msg.get("trader_side"),
             "active": active,
             "raw_events": raw_events,
             "matched_ts": bumped_match_ts

@@ -24,6 +24,7 @@ class TradeRecord(BaseModel):
     active: bool = True
     error: Optional[Any] = None
     raw_events: Optional[list[dict[str, Any]]] = Field(default_factory=list)
+    event_type: str = "placement"
     matched_ts: Optional[float] = 0
     created_ts: float = Field(default_factory=time.time)
     updated_ts: float = Field(default_factory=time.time)

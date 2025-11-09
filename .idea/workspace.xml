@@ -6,9 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/trade_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/trade_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,48 +53,48 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Docker.docker-compose.yml: Compose Deployment.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.__init__.executor": "Run",
-    "Python.clob.executor": "Run",
-    "Python.daily_markets_task.executor": "Run",
-    "Python.data.executor": "Run",
-    "Python.gamma.executor": "Run",
-    "Python.housekeeping.executor": "Run",
-    "Python.main (1).executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.report_notifier_task (1).executor": "Run",
-    "Python.report_notifier_task.executor": "Run",
-    "Python.report_service.executor": "Run",
-    "Python.run.executor": "Run",
-    "Python.telegram_notifier.executor": "Run",
-    "Python.trade_service.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "technical-analysis",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "/home/sgutman/IdeaProjects/polymarket-hunter/polymarket_hunter/api",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.__init__.executor&quot;: &quot;Run&quot;,
+    &quot;Python.clob.executor&quot;: &quot;Run&quot;,
+    &quot;Python.daily_markets_task.executor&quot;: &quot;Run&quot;,
+    &quot;Python.data.executor&quot;: &quot;Run&quot;,
+    &quot;Python.gamma.executor&quot;: &quot;Run&quot;,
+    &quot;Python.housekeeping.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.report_notifier_task (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.report_notifier_task.executor&quot;: &quot;Run&quot;,
+    &quot;Python.report_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run.executor&quot;: &quot;Run&quot;,
+    &quot;Python.telegram_notifier.executor&quot;: &quot;Run&quot;,
+    &quot;Python.trade_service.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;technical-analysis&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/sgutman/IdeaProjects/polymarket-hunter/polymarket_hunter/api&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
       <console-settings module-name="polymarket-hunter" is-module-sdk="true">
@@ -350,6 +350,7 @@
       <workItem from="1762254038503" duration="35343000" />
       <workItem from="1762338999716" duration="56466000" />
       <workItem from="1762522520796" duration="3725000" />
+      <workItem from="1762625777965" duration="7807000" />
     </task>
     <servers />
   </component>
