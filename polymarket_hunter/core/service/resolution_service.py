@@ -1,3 +1,4 @@
+import asyncio
 import time
 from functools import lru_cache
 from typing import List, Any, Dict, Tuple
@@ -29,7 +30,7 @@ class ResolutionService:
 
     async def _get_market_cached(self, market_id: str, cache: Dict[str, Any]) -> Any:
         if market_id not in cache:
-            cache[market_id] = await self._clob.get_market_retry(market_id)
+            cache[market_id] = await self._clob.get_market_async(market_id)
         return cache[market_id]
 
     # ---------- public APIs ----------
@@ -46,7 +47,7 @@ class ResolutionService:
         results_fail: List[Tuple[str, Any, dict]] = []
 
         try:
-            orders = await self._clob.get_orders_retry()
+            orders = await self._clob.get_orders_async()
         except Exception as e:
             return {"ok": [], "fail": [("get_orders", e)]}
 
@@ -67,7 +68,7 @@ class ResolutionService:
                     continue
 
                 try:
-                    res = await self._clob.cancel_order_retry(o["id"])
+                    res = await self._clob.cancel_order_async(o["id"])
                     results_ok.append((o["id"], res, o))
                 except Exception as e:
                     results_fail.append((o["id"], e, o))
@@ -88,7 +89,7 @@ class ResolutionService:
         results_fail: List[Tuple[str, Any, dict]] = []
 
         try:
-            positions = await self._data.get_positions_retry()
+            positions = await self._data.get_positions()
         except Exception as e:
             return {"ok": [], "fail": [("get_positions", e)]}
 
@@ -103,7 +104,7 @@ class ResolutionService:
                     continue
 
                 try:
-                    res = await self._data.redeem_position_retry(cid)
+                    res = await self._data.redeem_position_async(cid)
                     results_ok.append((cid, res, p))
                 except Exception as e:
                     results_fail.append((cid, e, p))
@@ -119,5 +120,5 @@ def get_resolution_service() -> ResolutionService:
 
 if __name__ == "__main__":
     keeper = ResolutionService()
-    res = keeper.redeem_resolved_positions()
+    res = asyncio.run(keeper.redeem_resolved_positions())
     print(res)

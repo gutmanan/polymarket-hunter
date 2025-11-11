@@ -26,7 +26,7 @@ class OrderService:
         self._notifier = RedisNotificationStore()
 
     async def execute_order(self, payload: dict[str, Any]):
-        if payload["action"] not in {"add", "update"}:
+        if payload["action"] != "add":
             return
 
         try:
@@ -53,6 +53,7 @@ class OrderService:
         else:
             raise NotImplementedError
 
+        res["timestamp"] = time.time()
         is_success = bool(res.get("success"))
 
         if is_success:
@@ -65,16 +66,18 @@ class OrderService:
         * so we can try to sell again or buy again.
         """
         if is_success == (req.side == Side.SELL):
-            await self._order_store.remove(req.market_id, req.asset_id)
+            await self._order_store.remove(req.market_id, req.asset_id, Side.BUY)
+        else:
+            await self._order_store.remove(req.market_id, req.asset_id, Side.SELL)
 
-    async def _build_trade_record(self, req: OrderRequest, res: Dict[str, Any]) -> ("TradeRecord"                                                                 ):
+    async def _build_trade_record(self, req: OrderRequest, res: Dict[str, Any]) -> TradeRecord:
         market_id =req.market_id
         asset_id = req.asset_id
         side = req.side
         order_id = res.get("orderID")
         status = (res.get("status") or "").upper() or "LIVE"
-        size_orig = float(res.get("makingAmount", 0))
-        size_mat = float(res.get("takingAmount", 0))
+        size_orig = float(res.get("makingAmount", 0)) if side == Side.BUY else float(res.get("takingAmount", 0))
+        size_mat = float(res.get("takingAmount", 0)) if side == Side.BUY else float(res.get("makingAmount", 0))
         price = size_orig / size_mat if size_mat > 0 else 0
 
         return TradeRecord(

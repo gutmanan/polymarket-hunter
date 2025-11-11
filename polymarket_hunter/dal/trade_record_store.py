@@ -36,7 +36,7 @@ class RedisTradeRecordStore:
 
     def _record_ts(self, rec: "TradeRecord") -> float:
         try:
-            return float(rec.match_ts or rec.created_ts or 0)
+            return float(rec.created_ts or 0)
         except Exception:
             return 0
 
@@ -88,16 +88,13 @@ class RedisTradeRecordStore:
             return None
         return TradeRecord.model_validate_json(raw)
 
-    async def get_latest(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None) -> Optional["TradeRecord"]:
+    async def get_active(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None) -> Optional["TradeRecord"]:
         pattern = self._build_pattern(market_id, asset_id, side)
         best: Optional[TradeRecord] = None
-        best_ts: float = -1.0
 
         async for rec in self._iter_records(pattern):
-            ts = self._record_ts(rec)
-            if ts > best_ts:
+            if rec.active:
                 best = rec
-                best_ts = ts
 
         return best
 
@@ -111,6 +108,7 @@ class RedisTradeRecordStore:
         """Simple upsert without re-publishing add/update differentiation"""
         skey = self._set_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
         dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
+        rec.touch()
         raw = rec.model_dump_json()
 
         await self._redis.set(dkey, raw)

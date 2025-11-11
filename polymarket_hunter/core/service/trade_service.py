@@ -23,6 +23,7 @@ class TradeService:
         self._trade_store = RedisTradeRecordStore()
         self._notifier = RedisNotificationStore()
 
+
     # ---------- Public API ----------
 
     async def update_trade(self, payload: dict[str, Any]) -> None:
@@ -39,11 +40,9 @@ class TradeService:
         await self._notifier.send_message(format_trade_record_message(rec))
 
     async def deactivate_opposite(self, rec):
-        existing_opposite = await self._trade_store.get_latest(
-            market_id=rec.market_id,
-            asset_id=rec.asset_id,
-            side=Side.BUY if rec.side == Side.SELL else Side.SELL
-        )
+        opposite_side = Side.BUY if rec.side == Side.SELL else Side.SELL
+        existing_opposite = await self._trade_store.get_active(rec.market_id, rec.asset_id, opposite_side)
         if existing_opposite:
             deactivate = existing_opposite.model_copy(update={"active": False})
+            deactivate.touch()
             await self._trade_store.update(deactivate)

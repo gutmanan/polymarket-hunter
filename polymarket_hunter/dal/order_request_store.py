@@ -23,17 +23,17 @@ class RedisOrderRequestStore:
 
     # ---------- keys ----------
     @staticmethod
-    def _set_key(market_id: str, asset_id: str) -> str:
-        return f"{market_id}:{asset_id}"
+    def _set_key(market_id: str, asset_id: str, side: str) -> str:
+        return f"{market_id}:{asset_id}:{side}"
 
     @staticmethod
-    def _doc_key(market_id: str, asset_id: str) -> str:
-        return f"{DOC_PREFIX}{market_id}:{asset_id}"
+    def _doc_key(market_id: str, asset_id: str, side: str) -> str:
+        return f"{DOC_PREFIX}{market_id}:{asset_id}:{side}"
 
     # ---------- CRUD ----------
 
-    async def contains(self, market_id: str, asset_id: str) -> bool:
-        return await self._redis.sismember(ORDERS_KEY, self._set_key(market_id, asset_id))
+    async def contains(self, market_id: str, asset_id: str, side: str) -> bool:
+        return await self._redis.sismember(ORDERS_KEY, self._set_key(market_id, asset_id, side))
 
     async def add(self, order: OrderRequest) -> None:
         """
@@ -42,8 +42,8 @@ class RedisOrderRequestStore:
         - store full JSON doc at DOC_PREFIX...
         - publish 'add' if new, 'update' if existing
         """
-        skey = self._set_key(order.market_id, order.asset_id)
-        dkey = self._doc_key(order.market_id, order.asset_id)
+        skey = self._set_key(order.market_id, order.asset_id, order.side)
+        dkey = self._doc_key(order.market_id, order.asset_id, order.side)
         raw = order.model_dump_json()
 
         pipe = self._redis.pipeline(transaction=True)
@@ -54,15 +54,16 @@ class RedisOrderRequestStore:
         event = "add" if sadd_res == 1 else "update"
         await self._publish({"action": event, "key": skey, "order": raw})
 
-    async def get(self, market_id: str, asset_id: str) -> Optional[OrderRequest]:
-        raw = await self._redis.get(self._doc_key(market_id, asset_id))
+    async def get(self, market_id: str, asset_id: str, side: str) -> Optional[OrderRequest]:
+        dkey = self._doc_key(market_id, asset_id, side)
+        raw = await self._redis.get(dkey)
         if not raw:
             return None
         return OrderRequest.model_validate_json(raw)
 
-    async def remove(self, market_id: str, asset_id: str) -> None:
-        skey = self._set_key(market_id, asset_id)
-        dkey = self._doc_key(market_id, asset_id)
+    async def remove(self, market_id: str, asset_id: str, side: str) -> None:
+        skey = self._set_key(market_id, asset_id, side)
+        dkey = self._doc_key(market_id, asset_id, side)
         pipe = self._redis.pipeline(transaction=True)
         pipe.srem(ORDERS_KEY, skey)
         pipe.delete(dkey)

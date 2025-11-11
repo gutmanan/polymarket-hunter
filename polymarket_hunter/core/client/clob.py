@@ -1,13 +1,12 @@
 import asyncio
 import json
 import os
-from datetime import datetime, timezone, timedelta
 from functools import lru_cache
 from typing import Any, Dict, Optional, List
 
 from dotenv import load_dotenv
 from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OrderBookSummary, OpenOrderParams, TradeParams
+from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OpenOrderParams, TradeParams
 from py_clob_client.constants import POLYGON
 from py_clob_client.exceptions import PolyApiException
 from web3 import Web3
@@ -54,36 +53,20 @@ class CLOBClient:
            Left as a placeholder since most CLOB ops don’t need manual calls here."""
         pass
 
-    # ---------- market & trades ----------
+    # ---------- markets ----------
 
     @retryable()
-    async def get_market_retry(self, market_id: str):
+    async def get_market_async(self, market_id: str):
         return await with_timeout(asyncio.to_thread(self.get_market, market_id), 10)
 
     def get_market(self, condition_id: str) -> Optional[Dict[str, Any]]:
         return self.client.get_market(condition_id=condition_id)
 
-    # ---------- order book & prices ----------
+    # ---------- trades ----------
 
-    def get_orderbook(self, token_id: str) -> OrderBookSummary:
-        return self.client.get_order_book(token_id)
-
-    def get_mid_from_book(self, token_id: str) -> Optional[float]:
-        try:
-            ob = self.get_orderbook(token_id)
-            best_bid = max(float(b.price) for b in ob.bids) if ob.bids else None
-            best_ask = min(float(a.price) for a in ob.asks) if ob.asks else None
-            if best_bid is None or best_ask is None:
-                return None
-            return round((best_bid + best_ask) / 2.0, 4)
-        except Exception:
-            return None
-
-    def get_price(self, token_id: str, side: str) -> float:
-        res = self.client.get_price(token_id, side=side)
-        return float(res["price"]) if res else 0.0
-
-    # ---------- orders ----------
+    @retryable()
+    async def get_trade_async(self, trade_id: str):
+        return await with_timeout(asyncio.to_thread(self.get_trade, trade_id), 10)
 
     def get_trade(self, trade_id: str):
         trades = self.client.get_trades(params=TradeParams(id=trade_id))
@@ -91,11 +74,17 @@ class CLOBClient:
             return trades[0]
         return None
 
+    # ---------- orders ----------
+
+    @retryable()
+    async def get_order_async(self, order_id: str):
+        return await with_timeout(asyncio.to_thread(self.get_order, order_id), 10)
+
     def get_order(self, order_id: str):
         return self.client.get_order(order_id=order_id)
 
     @retryable()
-    async def get_orders_retry(self, market_id: Optional[str] = None, asset_id: Optional[str] = None):
+    async def get_orders_async(self, market_id: Optional[str] = None, asset_id: Optional[str] = None):
         return await with_timeout(asyncio.to_thread(self.get_orders, market_id, asset_id), 10)
 
     def get_orders(self, market_id: Optional[str] = None, asset_id: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -103,6 +92,10 @@ class CLOBClient:
             params = OpenOrderParams(market=market_id, asset_id=asset_id)
             return self.client.get_orders(params=params)
         return  self.client.get_orders()
+
+    @retryable()
+    async def execute_limit_order_async(self, token_id: str, price: float, size: float, side: str, tif: TIF):
+        return await with_timeout(asyncio.to_thread(self.execute_limit_order, token_id, price, size, side, tif), 10)
 
     def execute_limit_order(self, token_id: str, price: float, size: float, side: str, tif: TIF) -> Dict[str, Any]:
         """
@@ -119,6 +112,10 @@ class CLOBClient:
                 "code": e.status_code,
                 "error": e.error_msg
             }
+
+    @retryable()
+    async def execute_market_order_async(self, token_id: str, size: float, side: str, tif: TIF):
+        return await with_timeout(asyncio.to_thread(self.execute_market_order, token_id, size, side, tif), 10)
 
     def execute_market_order(self, token_id: str, size: float, side: str, tif: TIF) -> Dict[str, Any]:
         """
@@ -138,7 +135,7 @@ class CLOBClient:
             }
 
     @retryable()
-    async def cancel_order_retry(self, order_id: str):
+    async def cancel_order_async(self, order_id: str):
         return await with_timeout(asyncio.to_thread(self.cancel_order, order_id), 10)
 
     def cancel_order(self, order_id: str) -> Dict[str, Any]:
@@ -150,6 +147,7 @@ class CLOBClient:
         except PolyApiException as e:
             logger.error(f"Unable to cancel order: {e}")
             return {
+                "success": False,
                 "code": e.status_code,
                 "error": e.error_msg
             }

@@ -27,6 +27,7 @@ class TradeHandler(MessageHandler):
 
         market = ctx.markets[msg["market"]]
         logger.info(f"Received trade: {msg}")
+
         if msg["trader_side"] == "TAKER":
             order = self._get_order_by_id(msg["taker_order_id"])
             trade = await self._merge_trade_record(market, msg, order)
@@ -45,9 +46,9 @@ class TradeHandler(MessageHandler):
         tr = await self._trade_store.get(market_id, asset_id, side, order_id)
 
         status = (order.get("status") or "").upper() or msg.get("status") or "LIVE"
-        size_orig = float(msg.get("size"))
-        size_mat = float(order.get("matched_amount") or order.get("size_matched") or 0.0)
         price = float(order.get("price"))
+        size_orig = float(msg.get("size")) * price
+        size_mat = float(order.get("matched_amount") or order.get("size_matched") or 0.0)
 
         if tr is None:
             # create new record
@@ -66,31 +67,32 @@ class TradeHandler(MessageHandler):
                 trader_side=msg.get("trader_side"),
                 status=status,
                 active=True,
-                raw_events=[dict(msg)],
-                matched_ts=msg.get("match_time")
+                matched_ts=float(msg.get("match_time"))
             )
-            return tr
+            return self._append_raw_event(tr, msg)
 
         new_matched = size_mat or tr.matched_amount
 
         bumped_match_ts = tr.matched_ts
         if new_matched != (tr.matched_amount or 0.0):
-            bumped_match_ts = msg.get("match_time") or tr.matched_ts
+            bumped_match_ts = float(msg.get("match_time")) or tr.matched_ts
 
-        raw_events = tr.raw_events
-        raw_events.append(dict(msg))
-
-        active = tr.active
-        if status == "FAILED":
-            active = False
-
-        return tr.model_copy(update={
+        updated = tr.model_copy(update={
             "matched_amount": new_matched,
             "status": status or tr.status,
             "price": price or tr.price,
             "size": size_orig or tr.size,
             "trader_side": msg.get("trader_side"),
-            "active": active,
-            "raw_events": raw_events,
             "matched_ts": bumped_match_ts
         })
+        return self._append_raw_event(updated, msg)
+
+    def _append_raw_event(self, tr: TradeRecord, msg: Dict[str, Any]) -> TradeRecord:
+        raw_events = tr.raw_events
+        raw_events.append(dict(msg))
+        updated = tr.model_copy(update={
+            "raw_events": raw_events,
+            "event_type": msg.get("event_type"),
+        })
+        updated.touch()
+        return updated

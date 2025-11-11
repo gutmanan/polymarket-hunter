@@ -17,9 +17,9 @@ from polymarket_hunter.utils.logger import setup_logger
 from polymarket_hunter.utils.market import prepare_market_amount, time_left_sec
 
 logger = setup_logger(__name__)
-EXIT_BUFFER_SECONDS = 10      # do not trade last 10 sec
-ENTER_BUFFER_SECONDS = 120    # do not trade last 10 sec
-
+EXIT_BUFFER_SECONDS = 10      # do not sell last 10 sec
+ENTER_BUFFER_SECONDS = 120    # do not buy last 120 sec
+ENTER_COOLDOWN_SECONDS = 300  # do not buy for 5 min
 
 class StrategyEvaluator:
     def __init__(self):
@@ -45,7 +45,7 @@ class StrategyEvaluator:
         return None
 
     async def _get_active_position(self, market_id: str, asset_id: str, side: Side) -> Optional[TradeRecord]:
-        existing_trade = await self._trade_store.get_latest(market_id, asset_id, side)
+        existing_trade = await self._trade_store.get_active(market_id, asset_id, side)
         return existing_trade if existing_trade and existing_trade.active else None
 
     async def should_enter(self, context: MarketContext, outcome: str) -> Optional[OrderRequest]:
@@ -149,7 +149,19 @@ class StrategyEvaluator:
 
     async def evaluate(self, context: MarketContext):
         for outcome, asset_id in context.outcome_assets.items():
-            enter_request = await self._order_store.get(context.condition_id, asset_id)
-            request = await self.should_exit(context, outcome, enter_request) if enter_request else await self.should_enter(context, outcome)
+            enter_request = await self._order_store.get(context.condition_id, asset_id, Side.BUY)
+            exit_request = await self._order_store.get(context.condition_id, asset_id, Side.SELL)
+
+            # TODO - Consider reentering after cooldown period
+            # now = time.time()
+            # reenter = not enter_request and (now - exit_request.created_ts) > ENTER_COOLDOWN_SECONDS
+
+            if enter_request and not exit_request:
+                request = await self.should_exit(context, outcome, enter_request)
+            elif not enter_request and not exit_request:
+                request = await self.should_enter(context, outcome)
+            else:
+                continue
+
             if request:
                 await self._order_store.add(request)
