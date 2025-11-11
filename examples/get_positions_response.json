@@ -1,0 +1,30 @@
+[
+  {
+    'proxyWallet': '0x4fbd318374dc0ae0d476199cedb409517e82947d',
+    'asset': '97486949423000834689848285374613286739718863310003786296950785189407524014521',
+    'conditionId': '0x319d5659b1503428f6ca37d74b9deb96e5b05f18f4efa4ff53863025c371b6ff',
+    'size': 1.612902,
+    'avgPrice': 0.619999,
+    'initialValue': 0.999997627098,
+    'currentValue': 1.6120955490000002,
+    'cashPnl': 0.6120979219020002,
+    'percentPnl': 61.20993743538299,
+    'totalBought': 1.612902,
+    'realizedPnl': 0,
+    'percentRealizedPnl': 61.209937435382976,
+    'curPrice': 0.9995,
+    'redeemable': False,
+    'mergeable': False,
+    'title': 'Bitcoin Up or Down - October 20, 10AM ET',
+    'slug': 'bitcoin-up-or-down-october-20-10am-et',
+    'icon': 'https://polymarket-upload.s3.us-east-2.amazonaws.com/BTC+fullsize.png',
+    'eventId': '61322',
+    'eventSlug': 'bitcoin-up-or-down-october-20-10am-et',
+    'outcome': 'Up',
+    'outcomeIndex': 0,
+    'oppositeOutcome': 'Down',
+    'oppositeAsset': '6315491440657004802144016014648455024012888278229469326887759026161446011108',
+    'endDate': '2025-10-20',
+    'negativeRisk': False
+  }
+]

@@ -1,0 +1,10 @@
+{
+  'market': '0x8708c71fe2ae9e07e75b7f2c1c7715e5484f6bf4e5a1d988032dfb962eaa5acf',
+  'asset_id': '74554856240372577228454954352314846803580839123194799200055059215886603481502',
+  'price': '0.99',
+  'size': '101',
+  'fee_rate_bps': '0',
+  'side': 'BUY',
+  'timestamp': '1761220500890',
+  'event_type': 'last_trade_price'
+}

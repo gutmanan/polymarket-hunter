@@ -1,0 +1,118 @@
+from __future__ import annotations
+
+import json
+from typing import Optional, List
+
+import redis.asyncio as redis
+
+from polymarket_hunter.config.settings import settings
+from polymarket_hunter.dal.datamodel.order_request import OrderRequest
+
+ORDERS_KEY = "hunter:order_requests"
+DOC_PREFIX = "hunter:order_requests:doc:"
+EVENTS_CHANNEL = "hunter:order_requests:events"
+
+
+class RedisOrderRequestStore:
+    def __init__(self, redis_url: Optional[str] = None):
+        self._redis = redis.from_url(redis_url or settings.REDIS_URL, decode_responses=True)
+
+    @property
+    def client(self) -> redis.Redis:
+        return self._redis
+
+    # ---------- keys ----------
+    @staticmethod
+    def _set_key(market_id: str, asset_id: str) -> str:
+        return f"{market_id}:{asset_id}"
+
+    @staticmethod
+    def _doc_key(market_id: str, asset_id: str) -> str:
+        return f"{DOC_PREFIX}{market_id}:{asset_id}"
+
+    # ---------- CRUD ----------
+
+    async def contains(self, market_id: str, asset_id: str) -> bool:
+        return await self._redis.sismember(ORDERS_KEY, self._set_key(market_id, asset_id))
+
+    async def add(self, order: OrderRequest) -> None:
+        """
+        Upsert behavior:
+        - ensure key present in the set
+        - store full JSON doc at DOC_PREFIX...
+        - publish 'add' if new, 'update' if existing
+        """
+        skey = self._set_key(order.market_id, order.asset_id)
+        dkey = self._doc_key(order.market_id, order.asset_id)
+        raw = order.model_dump_json()
+
+        pipe = self._redis.pipeline(transaction=True)
+        pipe.sadd(ORDERS_KEY, skey)
+        pipe.set(dkey, raw)
+        sadd_res, _ = await pipe.execute()
+
+        event = "add" if sadd_res == 1 else "update"
+        await self._publish({"action": event, "key": skey, "order": raw})
+
+    async def get(self, market_id: str, asset_id: str) -> Optional[OrderRequest]:
+        raw = await self._redis.get(self._doc_key(market_id, asset_id))
+        if not raw:
+            return None
+        return OrderRequest.model_validate_json(raw)
+
+    async def remove(self, market_id: str, asset_id: str) -> None:
+        skey = self._set_key(market_id, asset_id)
+        dkey = self._doc_key(market_id, asset_id)
+        pipe = self._redis.pipeline(transaction=True)
+        pipe.srem(ORDERS_KEY, skey)
+        pipe.delete(dkey)
+        removed, _ = await pipe.execute()
+        if removed:
+            await self._publish({"action": "remove", "key": skey})
+
+    async def list_keys(self) -> List[str]:
+        members = await self._redis.smembers(ORDERS_KEY)
+        return sorted(members)
+
+    async def list_docs(self) -> List[OrderRequest]:
+        """
+        Fetch all stored OrderRequests.
+        """
+        keys = await self.list_keys()
+        if not keys:
+            return []
+        doc_keys = [f"{DOC_PREFIX}{k}" for k in keys]
+        raws = await self._redis.mget(doc_keys)
+        out: List[OrderRequest] = []
+        for raw in raws:
+            if not raw:
+                continue
+            try:
+                out.append(OrderRequest.model_validate_json(raw))
+            except Exception:
+                # skip malformed entry
+                continue
+        return out
+
+    # ---------- Pub/Sub ----------
+
+    async def _publish(self, message: dict) -> None:
+        await self._redis.publish(EVENTS_CHANNEL, json.dumps(message))
+
+    async def subscribe_events(self):
+        pubsub = self._redis.pubsub()
+        await pubsub.subscribe(EVENTS_CHANNEL)
+        try:
+            async for msg in pubsub.listen():
+                if msg.get("type") != "message":
+                    continue
+                data = msg.get("data")
+                if isinstance(data, (bytes, bytearray)):
+                    data = data.decode()
+                try:
+                    yield json.loads(data)
+                except Exception:
+                    continue
+        finally:
+            await pubsub.unsubscribe(EVENTS_CHANNEL)
+            await pubsub.close()

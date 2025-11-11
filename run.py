@@ -1,5 +1,7 @@
-import asyncio
-from src.main import main
+import uvicorn
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    uvicorn.run(app="polymarket_hunter.main:app", host="0.0.0.0", port=8080, reload=True, reload_dirs=["polymarket_hunter"], log_level="info")
+else:
+    from polymarket_hunter.main import app

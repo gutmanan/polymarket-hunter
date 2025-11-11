@@ -1,0 +1,19 @@
+{
+  'id': '0xf8001ae232c93ab93f21503bf0efe6a670f176de8cf27a2a46e715a51629816e',
+  'status': 'MATCHED',
+  'owner': '9e6a0446-71ff-0e56-b26c-35b9ad65f701',
+  'maker_address': '0x4FBd318374Dc0aE0D476199CEdB409517e82947d',
+  'market': '0x4127855936815d4aa0a6c235540d502070427d303ade60dd4c4e8ddfa56f42da',
+  'asset_id': '65433126589112842604383936482141900363689082051037003209889097246399781148990',
+  'side': 'BUY',
+  'original_size': '5',
+  'size_matched': '5',
+  'price': '0.77',
+  'outcome': 'Down',
+  'expiration': '0',
+  'order_type': 'GTC',
+  'associate_trades': [
+    'e9d5ee1a-6134-480d-be6c-770a807b416b'
+  ],
+  'created_at': 1761384377
+}
