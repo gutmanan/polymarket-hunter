@@ -65,35 +65,34 @@ strategies = [
         condition_fn=lambda ctx: (
                 has_all(ctx, CRYPTO_TAGS) and has_any(ctx, INTERVAL_TAGS)
                 and ok_liquidity(ctx)
-                and is_final_window(ctx, dynamic_tf=3)
         ),
         rules=[
             Rule(
                 name="Buy Favorite (Up)",
                 condition_fn=lambda ctx: (
-                        0.80 <= price(ctx, "Up", Side.BUY) <= 0.94
+                        0.72 <= price(ctx, "Up", Side.BUY) <= 0.77
                         and spread(ctx, "Up") <= CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="Up",
-                    stop_loss=0.2,
-                    take_profit=0.05
+                    stop_loss=0.12,
+                    take_profit=0.03
                 ),
             ),
             Rule(
                 name="Buy Favorite (Down)",
                 condition_fn=lambda ctx: (
-                        0.80 <= price(ctx, "Down", Side.BUY) <= 0.94
+                        0.72 <= price(ctx, "Down", Side.BUY) <= 0.77
                         and spread(ctx, "Down") <= CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="Down",
-                    stop_loss=0.2,
-                    take_profit=0.05
+                    stop_loss=0.12,
+                    take_profit=0.03
                 ),
             ),
         ],
@@ -103,35 +102,34 @@ strategies = [
         condition_fn=lambda ctx: (
                 not has_any(ctx, CRYPTO_TAGS) and not has_any(ctx, SPORT_TAGS)
                 and ok_liquidity(ctx)
-                and is_final_window(ctx, dynamic_tf=2)
         ),
         rules=[
             Rule(
                 name="Buy Favorite (Yes)",
                 condition_fn=lambda ctx: (
-                        0.80 <= price(ctx, "Yes", Side.BUY) <= 0.94
+                        0.75 <= price(ctx, "Yes", Side.BUY) <= 0.89
                         and spread(ctx, "Yes") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="Yes",
-                    stop_loss=0.15,
-                    take_profit=0.03
+                    stop_loss=0.21,
+                    take_profit=0.07
                 ),
             ),
             Rule(
                 name="Buy Favorite (No)",
                 condition_fn=lambda ctx: (
-                        0.80 <= price(ctx, "No", Side.BUY) <= 0.94
+                        0.75 <= price(ctx, "No", Side.BUY) <= 0.89
                         and spread(ctx, "No") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="No",
-                    stop_loss=0.15,
-                    take_profit=0.03
+                    stop_loss=0.21,
+                    take_profit=0.07
                 ),
             ),
         ],

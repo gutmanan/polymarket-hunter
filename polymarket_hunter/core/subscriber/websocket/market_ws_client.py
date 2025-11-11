@@ -82,17 +82,18 @@ class MarketWSClient:
     # ----- internals -----
 
     async def _run(self) -> None:
-        backoff = 50.0
+        backoff = 1.0
         while not self._stop.is_set():
             try:
                 await self._connect_and_pump()
                 self._restart.clear()
-                backoff = 50.0
+                backoff = 1.0
             except asyncio.CancelledError:
                 raise
             except Exception as e:
                 logger.warning("WS client error: %s", e)
                 await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 10.0)
 
     async def _connect_and_pump(self) -> None:
         async with websockets.connect(

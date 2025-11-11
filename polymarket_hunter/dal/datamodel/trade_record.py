@@ -28,3 +28,6 @@ class TradeRecord(BaseModel):
     matched_ts: Optional[float] = 0
     created_ts: float = Field(default_factory=time.time)
     updated_ts: float = Field(default_factory=time.time)
+
+    def touch(self) -> None:
+        self.updated_ts = time.time()

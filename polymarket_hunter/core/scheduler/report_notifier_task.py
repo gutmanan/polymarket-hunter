@@ -15,7 +15,7 @@ class ReportNotifierTask(BaseIntervalTask):
         self._notifier = RedisNotificationStore()
 
     async def run(self):
-        report = self._reporter.generate_summary(hours_back=240)
+        report = await self._reporter.generate_summary(hours_back=240)
         await self._notifier.send_message(report)
 
 

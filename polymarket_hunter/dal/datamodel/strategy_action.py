@@ -26,7 +26,7 @@ class StrategyAction(BaseModel):
     side: Side
     size: float
     outcome: str
-    slippage: Optional[float] = 0.05
+    slippage: Optional[float] = 0.01
     stop_loss: Optional[float] = 1
     take_profit: Optional[float] = 1
     max_spread: Optional[float] = 0.1

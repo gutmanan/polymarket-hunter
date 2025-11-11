@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timezone, time
 
+from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
 from polymarket_hunter.utils.market import market_has_ended
@@ -12,6 +13,7 @@ class HourlyMarketsTask(BaseIntervalTask):
     def __init__(self, slugs_subscriber):
         super().__init__("_daily_markets", minutes=5, misfire_grace_time=120)
         self._slugs_subscriber = slugs_subscriber
+        self._data = get_data_client()
         self._gamma = get_gamma_client()
 
     async def get_current_markets(self):
@@ -44,9 +46,12 @@ class HourlyMarketsTask(BaseIntervalTask):
 
     async def prune_expired(self) -> None:
         markets = await self._slugs_subscriber.get_markets()
-        expired_slugs = [m["slug"] for m in markets if m.get("slug") and market_has_ended(m)]
-        if expired_slugs:
-            await asyncio.gather(*(self._slugs_subscriber.remove_slug(s) for s in expired_slugs))
+        for m in markets:
+            slug = m.get("slug")
+            if not market_has_ended(m):
+                continue
+
+            await self._slugs_subscriber.remove_slug(slug)
 
     async def run(self):
         await self.add_missing_current_markets()
@@ -55,13 +60,16 @@ class HourlyMarketsTask(BaseIntervalTask):
     def _filtered_slugs(self, markets: list[dict]) -> set[str]:
         slugs = set()
         for m in markets:
+            if bool(m.get("negRisk")):
+                continue
+
             slug = m.get("slug")
-            tags = [t["label"] for t in m["tags"]],
             if not slug:
                 continue
-            if m.get("negRisk"):
-                continue
+
+            tags = [t["label"] for t in m["tags"]]
             if any(tag in tags for tag in ("Sports", "15M")):
                 continue
+
             slugs.add(slug)
         return slugs
