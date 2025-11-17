@@ -5,6 +5,8 @@ from typing import Optional, Any
 from pydantic import BaseModel, Field
 from pydantic.config import ConfigDict
 
+from polymarket_hunter.dal.datamodel.trend_prediction import TrendPrediction
+
 
 class MarketContext(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
@@ -26,6 +28,7 @@ class MarketContext(BaseModel):
     clob_token_ids: list[str]
     outcome_prices: dict[str, dict[str, Any]]
     outcome_assets: dict[str, str]
+    outcome_trends: dict[str, Optional[TrendPrediction]]
     tags: set[str]
     event_ts: float = Field(default_factory=time.time)
     created_ts: float = Field(default_factory=time.time)

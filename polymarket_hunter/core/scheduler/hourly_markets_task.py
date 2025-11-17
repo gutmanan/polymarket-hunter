@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timezone, time
+from datetime import datetime, timezone, time, timedelta
 
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
@@ -11,7 +11,7 @@ ISOZ_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 class HourlyMarketsTask(BaseIntervalTask):
     def __init__(self, slugs_subscriber):
-        super().__init__("_daily_markets", minutes=5, misfire_grace_time=120)
+        super().__init__("_daily_markets", minutes=1, misfire_grace_time=120)
         self._slugs_subscriber = slugs_subscriber
         self._data = get_data_client()
         self._gamma = get_gamma_client()
@@ -19,7 +19,7 @@ class HourlyMarketsTask(BaseIntervalTask):
     async def get_current_markets(self):
         now = datetime.now(timezone.utc)
         now_iso = now.strftime(ISOZ_FMT)
-        end = datetime.combine(now.date(), time(23, 59, 59, tzinfo=timezone.utc))
+        end = datetime.combine(now.date() + timedelta(days=1), time(23, 59, 59, tzinfo=timezone.utc))
         end_iso = end.strftime(ISOZ_FMT)
 
         markets = await self._gamma.get_all_markets(
@@ -68,7 +68,7 @@ class HourlyMarketsTask(BaseIntervalTask):
                 continue
 
             tags = [t["label"] for t in m["tags"]]
-            if any(tag in tags for tag in ("Sports", "15M")):
+            if any(tag in tags for tag in ("Sports", "Crypto", "Up or Down", "15M")):
                 continue
 
             slugs.add(slug)

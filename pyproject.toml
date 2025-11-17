@@ -20,6 +20,7 @@ dependencies = [
   "websockets>=15.0,<16.0",
   "pandas>=2.3,<3.0",
   "pandas-ta==0.4.71b0",
+  "filterpy==1.4.5",
   "py-clob-client==0.28.0",
   "pytokens==0.1.10",
   "gevent>=25.9,<26.0", # keep only if you actually use it

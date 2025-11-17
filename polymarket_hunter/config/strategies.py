@@ -7,7 +7,7 @@ from polymarket_hunter.utils.market import time_left_sec, late_threshold_sec
 
 CRYPTO_SPREAD = 0.03  # per-outcome spread cap for safer fills
 NON_CRYPTO_SPREAD = 0.05
-MIN_LIQ = 500  # skip illiquid books
+MIN_LIQ = 1_000  # skip illiquid books
 
 INTERVAL_TAGS = {"1H", "4H"}
 CRYPTO_TAGS = {"Crypto", "Up or Down"}
@@ -61,43 +61,6 @@ def ok_liquidity(ctx: MarketContext):
 
 strategies = [
     Strategy(
-        name="Late-Expiry Favorite Clamp (Crypto)",
-        condition_fn=lambda ctx: (
-                has_all(ctx, CRYPTO_TAGS) and has_any(ctx, INTERVAL_TAGS)
-                and ok_liquidity(ctx)
-        ),
-        rules=[
-            Rule(
-                name="Buy Favorite (Up)",
-                condition_fn=lambda ctx: (
-                        0.72 <= price(ctx, "Up", Side.BUY) <= 0.77
-                        and spread(ctx, "Up") <= CRYPTO_SPREAD
-                ),
-                action=StrategyAction(
-                    side=Side.BUY,
-                    size=10,
-                    outcome="Up",
-                    stop_loss=0.12,
-                    take_profit=0.03
-                ),
-            ),
-            Rule(
-                name="Buy Favorite (Down)",
-                condition_fn=lambda ctx: (
-                        0.72 <= price(ctx, "Down", Side.BUY) <= 0.77
-                        and spread(ctx, "Down") <= CRYPTO_SPREAD
-                ),
-                action=StrategyAction(
-                    side=Side.BUY,
-                    size=10,
-                    outcome="Down",
-                    stop_loss=0.12,
-                    take_profit=0.03
-                ),
-            ),
-        ],
-    ),
-    Strategy(
         name="Late-Expiry Favorite Clamp (Non-Crypto)",
         condition_fn=lambda ctx: (
                 not has_any(ctx, CRYPTO_TAGS) and not has_any(ctx, SPORT_TAGS)
@@ -107,31 +70,70 @@ strategies = [
             Rule(
                 name="Buy Favorite (Yes)",
                 condition_fn=lambda ctx: (
-                        0.75 <= price(ctx, "Yes", Side.BUY) <= 0.89
+                        0.75 <= price(ctx, "Yes", Side.BUY) <= 0.90
                         and spread(ctx, "Yes") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="Yes",
-                    stop_loss=0.21,
-                    take_profit=0.07
+                    stop_loss=0.20,
+                    take_profit=0.10,
                 ),
             ),
             Rule(
                 name="Buy Favorite (No)",
                 condition_fn=lambda ctx: (
-                        0.75 <= price(ctx, "No", Side.BUY) <= 0.89
+                        0.75 <= price(ctx, "No", Side.BUY) <= 0.90
                         and spread(ctx, "No") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="No",
-                    stop_loss=0.21,
-                    take_profit=0.07
+                    stop_loss=0.20,
+                    take_profit=0.10,
                 ),
             ),
         ],
     ),
 ]
+
+# Strategy(
+#     name="Late-Expiry Favorite Clamp (Crypto)",
+#     condition_fn=lambda ctx: (
+#             has_all(ctx, CRYPTO_TAGS) and has_any(ctx, INTERVAL_TAGS)
+#             and ok_liquidity(ctx)
+#             and is_final_window(ctx, dynamic_tf=2)
+#     ),
+#     rules=[
+#         Rule(
+#             name="Buy Favorite (Up)",
+#             condition_fn=lambda ctx: (
+#                     0.75 <= price(ctx, "Up", Side.BUY) <= 0.90
+#                     and spread(ctx, "Up") <= CRYPTO_SPREAD
+#             ),
+#             action=StrategyAction(
+#                 side=Side.BUY,
+#                 size=10,
+#                 outcome="Up",
+#                 stop_loss=0.25,
+#                 take_profit=0.10
+#             ),
+#         ),
+#         Rule(
+#             name="Buy Favorite (Down)",
+#             condition_fn=lambda ctx: (
+#                     0.75 <= price(ctx, "Down", Side.BUY) <= 0.90
+#                     and spread(ctx, "Down") <= CRYPTO_SPREAD
+#             ),
+#             action=StrategyAction(
+#                 side=Side.BUY,
+#                 size=10,
+#                 outcome="Down",
+#                 stop_loss=0.25,
+#                 take_profit=0.10
+#             ),
+#         ),
+#     ],
+# ),

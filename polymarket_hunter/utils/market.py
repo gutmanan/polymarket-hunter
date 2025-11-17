@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_DOWN
 from typing import Any, Dict
@@ -56,6 +57,12 @@ def _now_s() -> int:
 
 def _to_epoch_s(dt: datetime) -> int:
     return int(dt.timestamp())
+
+def to_seconds(ts: float | int | None) -> float:
+    if ts is None:
+        return time.time()
+    ts = float(ts)
+    return ts / 1000.0 if ts > 1e11 else ts
 
 def time_left_sec(ctx: MarketContext) -> int:
     return _to_epoch_s(ctx.end_date) - _now_s()

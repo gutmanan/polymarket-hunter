@@ -2,29 +2,27 @@ from decimal import Decimal
 from typing import Optional, Tuple
 
 from polymarket_hunter.config.strategies import strategies
-from polymarket_hunter.core.client.clob import get_clob_client
-from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.notifier.formatter.exit_message_formatter import format_exit_message
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
-from polymarket_hunter.dal.datamodel.order_request import OrderRequest
+from polymarket_hunter.dal.datamodel.order_request import OrderRequest, RequestType
 from polymarket_hunter.dal.datamodel.strategy import Rule, Strategy
 from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side, OrderType
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
+from polymarket_hunter.dal.datamodel.trend_prediction import Direction
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import prepare_market_amount, time_left_sec
+from polymarket_hunter.utils.market import prepare_market_amount, time_left_sec, to_seconds
 
 logger = setup_logger(__name__)
-EXIT_BUFFER_SECONDS = 10      # do not sell last 10 sec
-ENTER_BUFFER_SECONDS = 120    # do not buy last 120 sec
-ENTER_COOLDOWN_SECONDS = 300  # do not buy for 5 min
+
+EXIT_LOCKOUT_PERIOD_SECONDS = 10
+ENTER_LOCKOUT_PERIOD_SECONDS = 180
+REVERSAL_CONFIRMATION_PERIOD_SECONDS = 60
 
 class StrategyEvaluator:
     def __init__(self):
-        self._clob = get_clob_client()
-        self._data = get_data_client()
         self._order_store = RedisOrderRequestStore()
         self._trade_store = RedisTradeRecordStore()
         self._notifier = RedisNotificationStore()
@@ -44,12 +42,64 @@ class StrategyEvaluator:
                 continue
         return None
 
+    def _validate_request(self, context: MarketContext, outcome: str, request: OrderRequest) -> bool:
+        if request.request_type in (RequestType.TAKE_PROFIT, RequestType.STOP_LOSS):
+            logger.info(
+                "[VALIDATED] About to place %s order of %s (%s) shares for %s @ %.3f",
+                request.side, request.size, outcome, context.slug, request.price
+            )
+            return True
+
+        trend = context.outcome_trends.get(outcome)
+        if not trend:
+            logger.info(
+                "[TREND BLOCK] No trend data → blocking %s %s @ %.3f (%s)",
+                request.side, outcome, request.price, context.slug
+            )
+            return False
+
+        now = to_seconds(context.event_ts)
+        if trend.reversal and (now - trend.flipped_ts) < REVERSAL_CONFIRMATION_PERIOD_SECONDS:
+            logger.info(
+                "[TREND BLOCK] Recent reversal — waiting confirm period %.1fs → blocking %s %s @ %.3f (%s) (reversed from %s %.2fs ago)",
+                REVERSAL_CONFIRMATION_PERIOD_SECONDS, request.side, outcome, request.price, context.slug, trend.flipped_from, now - trend.flipped_ts
+            )
+            return False
+
+        if abs(trend.t_stat) < 2:
+            logger.info(
+                "[TREND BLOCK] Weak t-stat (%.2f < 2.5) → blocking %s %s @ %.3f (%s)",
+                trend.t_stat, request.side, outcome, request.price, context.slug
+            )
+            return False
+
+        if trend.confidence < 0.66:
+            logger.info(
+                "[TREND BLOCK] Low confidence (%.2f < 0.7) → blocking %s %s @ %.3f (%s)",
+                trend.confidence, request.side, outcome, request.price, context.slug
+            )
+            return False
+
+        expected_side = Side.BUY if trend.direction == Direction.UP else Side.SELL
+        if request.side != expected_side:
+            logger.info(
+                "[TREND BLOCK] Trend mismatch → blocking %s %s @ %.3f (%s). Trend=%s (t=%.2f, conf=%.2f), Expected=%s",
+                request.side, outcome, request.price, context.slug, trend.direction, trend.t_stat, trend.confidence, expected_side
+            )
+            return False
+
+        logger.info(
+            "[VALIDATED] About to place %s order of %s (%s) shares for %s @ %.3f",
+            request.side, request.size, outcome, context.slug, request.price
+        )
+        return True
+
     async def _get_active_position(self, market_id: str, asset_id: str, side: Side) -> Optional[TradeRecord]:
         existing_trade = await self._trade_store.get_active(market_id, asset_id, side)
         return existing_trade if existing_trade and existing_trade.active else None
 
     async def should_enter(self, context: MarketContext, outcome: str) -> Optional[OrderRequest]:
-        if time_left_sec(context) <= ENTER_BUFFER_SECONDS:
+        if time_left_sec(context) <= ENTER_LOCKOUT_PERIOD_SECONDS:
             return None
 
         result = self._find_action_for_context(context, outcome)
@@ -88,11 +138,12 @@ class StrategyEvaluator:
             action=action,
             context=context,
             strategy_name=strategy.name,
-            rule_name=rule.name
+            rule_name=rule.name,
+            request_type=RequestType.STRATEGY_ENTER
         )
 
     async def should_exit(self, context: MarketContext, outcome: str, enter_request: OrderRequest) -> Optional[OrderRequest]:
-        if time_left_sec(context) <= EXIT_BUFFER_SECONDS:
+        if time_left_sec(context) <= EXIT_LOCKOUT_PERIOD_SECONDS:
             return None
 
         market_id = enter_request.market_id
@@ -125,11 +176,14 @@ class StrategyEvaluator:
         if not (hit_stop or hit_tp):
             return None
 
-        # Send notifications
+        request_type = None
+
         if hit_stop:
+            request_type = RequestType.STOP_LOSS
             message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=True)
             await self._notifier.send_message(message)
         if hit_tp:
+            request_type = RequestType.TAKE_PROFIT
             message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=False)
             await self._notifier.send_message(message)
 
@@ -145,16 +199,13 @@ class StrategyEvaluator:
             context=context,
             strategy_name=enter_request.strategy_name,
             rule_name=enter_request.rule_name,
+            request_type=request_type
         )
 
     async def evaluate(self, context: MarketContext):
         for outcome, asset_id in context.outcome_assets.items():
             enter_request = await self._order_store.get(context.condition_id, asset_id, Side.BUY)
             exit_request = await self._order_store.get(context.condition_id, asset_id, Side.SELL)
-
-            # TODO - Consider reentering after cooldown period
-            # now = time.time()
-            # reenter = not enter_request and (now - exit_request.created_ts) > ENTER_COOLDOWN_SECONDS
 
             if enter_request and not exit_request:
                 request = await self.should_exit(context, outcome, enter_request)
@@ -163,5 +214,5 @@ class StrategyEvaluator:
             else:
                 continue
 
-            if request:
+            if request and self._validate_request(context, outcome, request):
                 await self._order_store.add(request)

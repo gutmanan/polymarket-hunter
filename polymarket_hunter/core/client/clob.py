@@ -123,7 +123,6 @@ class CLOBClient:
         """
         try:
             args = MarketOrderArgs(token_id=token_id, amount=size, side=side)
-            logger.info(f"Market order args: {args}")
             signed = self.client.create_market_order(args)
             return self.client.post_order(signed, orderType=tif)
         except PolyApiException as e:
