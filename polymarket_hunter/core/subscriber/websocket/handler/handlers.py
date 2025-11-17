@@ -18,7 +18,7 @@ class MessageHandler(Protocol):
     def can_handle(self, msg: Dict[str, Any]) -> bool:
         return self.event_types is not None and msg["event_type"] in self.event_types
 
-    async def handle(self, msg: Dict[str, Any], ctx: "MessageContext") -> None:
+    async def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
         """Do the work. Raise only for unexpected errors."""
         ...
 
@@ -42,7 +42,7 @@ class MessageContext:
 
 class MessageRouter:
 
-    def __init__(self, market_id: str, handlers: List[MessageHandler], ctx: "MessageContext", *, per_handler_timeout_ms: Optional[int] = None) -> None:
+    def __init__(self, market_id: str, handlers: List[MessageHandler], ctx: MessageContext, *, per_handler_timeout_ms: Optional[int] = None) -> None:
         self.market_id = market_id
         self.handlers = handlers
         self.ctx = ctx

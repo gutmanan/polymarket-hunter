@@ -9,7 +9,6 @@ from py_clob_client.client import ClobClient
 from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OpenOrderParams, TradeParams
 from py_clob_client.constants import POLYGON
 from py_clob_client.exceptions import PolyApiException
-from web3 import Web3
 
 from polymarket_hunter.dal.datamodel.strategy_action import TIF
 from polymarket_hunter.utils.logger import setup_logger
@@ -29,11 +28,6 @@ class CLOBClient:
 
         if not self.private_key:
             raise RuntimeError("Missing PRIVATE_KEY in env")
-
-        # web3 (for approvals/balances; PoA middleware for Polygon)
-        self.w3 = Web3(Web3.HTTPProvider(self.polygon_rpc))
-        self.account = self.w3.eth.account.from_key(self.private_key)
-        self.address = self.account.address
 
         # CLOB client + optional API creds (if you’ve pre-created them)
         self.client = self._init_client()

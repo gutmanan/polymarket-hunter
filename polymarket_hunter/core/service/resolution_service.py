@@ -104,7 +104,7 @@ class ResolutionService:
                     continue
 
                 try:
-                    res = await self._data.redeem_position_async(cid)
+                    res = await self._data.redeem_position(cid)
                     results_ok.append((cid, res, p))
                 except Exception as e:
                     results_fail.append((cid, e, p))
