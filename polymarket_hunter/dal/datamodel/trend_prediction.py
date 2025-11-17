@@ -20,5 +20,5 @@ class TrendPrediction(BaseModel):
     reversal: bool = False
     flipped_from: Optional[Direction] = None
     flipped_ts: Optional[float] = None
-    created_ts: float = Field(default_factory=lambda: time.time())
-    updated_ts: float = Field(default_factory=lambda: time.time())
+    created_ts: float = Field(default_factory=time.time)
+    updated_ts: float = Field(default_factory=time.time)
