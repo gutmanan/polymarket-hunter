@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     async def main():
         gamma = get_gamma_client()
-        res = await gamma.get_market_by_slug("bitcoin-up-or-down-november-6-10am-et")
+        res = await gamma.get_market_by_slug("will-israel-strike-lebanon-on-november-18")
         print(json.dumps(res, indent=2))
         await gamma.aclose()
 

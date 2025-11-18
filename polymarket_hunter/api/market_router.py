@@ -1,5 +1,3 @@
-from typing import Dict
-
 from fastapi import APIRouter, HTTPException
 
 from polymarket_hunter.dal.slug_store import RedisSlugStore
@@ -12,9 +10,8 @@ async def list_slugs():
     return {"slugs": await slug_store.list()}
 
 
-@router.post("/slugs")
-async def add_slug(payload: Dict[str, str]):
-    slug = (payload.get("slug") or "").strip()
+@router.put("/slugs/{slug}")
+async def add_slug(slug: str):
     if not slug:
         raise HTTPException(status_code=400, detail="slug is required")
 
@@ -24,5 +21,8 @@ async def add_slug(payload: Dict[str, str]):
 
 @router.delete("/slugs/{slug}")
 async def delete_slug(slug: str):
+    if not slug:
+        raise HTTPException(status_code=400, detail="slug is required")
+
     await slug_store.remove(slug)
     return {"slug": slug, "slugs": sorted(await slug_store.list())}

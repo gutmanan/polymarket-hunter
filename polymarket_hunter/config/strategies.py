@@ -3,11 +3,11 @@ from typing import Optional
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.strategy import Strategy, Rule
 from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
-from polymarket_hunter.utils.market import time_left_sec, late_threshold_sec
+from polymarket_hunter.utils.helper import time_left_sec, late_threshold_sec
 
 CRYPTO_SPREAD = 0.03  # per-outcome spread cap for safer fills
 NON_CRYPTO_SPREAD = 0.05
-MIN_LIQ = 1_000  # skip illiquid books
+MIN_LIQ = 10_000  # skip illiquid books
 
 INTERVAL_TAGS = {"1H", "4H"}
 CRYPTO_TAGS = {"Crypto", "Up or Down"}
@@ -54,6 +54,8 @@ def spread(ctx: MarketContext, outcome: str):
 
 def ok_liquidity(ctx: MarketContext):
     try:
+        if "november-18" in ctx.slug:
+            print(ctx.slug, ctx.liquidity, ctx.outcome_prices.get("Yes", {}).get("BUY", 0))
         return float(ctx.liquidity) >= MIN_LIQ
     except Exception:
         return False
@@ -78,7 +80,7 @@ strategies = [
                     size=10,
                     outcome="Yes",
                     stop_loss=0.20,
-                    take_profit=0.10,
+                    take_profit=0.15,
                 ),
             ),
             Rule(
@@ -92,7 +94,7 @@ strategies = [
                     size=10,
                     outcome="No",
                     stop_loss=0.20,
-                    take_profit=0.10,
+                    take_profit=0.15,
                 ),
             ),
         ],

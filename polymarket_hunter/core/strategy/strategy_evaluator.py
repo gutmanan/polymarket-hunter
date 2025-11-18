@@ -6,14 +6,14 @@ from polymarket_hunter.core.notifier.formatter.exit_message_formatter import for
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest, RequestType
 from polymarket_hunter.dal.datamodel.strategy import Rule, Strategy
-from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side, OrderType
+from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.datamodel.trend_prediction import Direction
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
+from polymarket_hunter.utils.helper import time_left_sec
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import prepare_market_amount, time_left_sec, to_seconds
 
 logger = setup_logger(__name__)
 
@@ -98,6 +98,8 @@ class StrategyEvaluator:
         existing_trade = await self._trade_store.get_active(market_id, asset_id, side)
         return existing_trade if existing_trade and existing_trade.active else None
 
+    # ---------- Public API --------------
+
     async def should_enter(self, context: MarketContext, outcome: str) -> Optional[OrderRequest]:
         if time_left_sec(context) <= ENTER_LOCKOUT_PERIOD_SECONDS:
             return None
@@ -111,17 +113,12 @@ class StrategyEvaluator:
         market_id = context.condition_id
         asset_id = context.outcome_assets[outcome]
 
+        size = max(action.size, context.order_min_size)
         side = action.side
         outcome_prices = context.outcome_prices[outcome]
         current_price: Decimal = outcome_prices.get(side)
-
         if current_price is None or current_price == 0:
             return None
-
-        if action.order_type == OrderType.MARKET:
-            size = prepare_market_amount(side, current_price, action.size)
-        else:
-            size = max(action.size, context.order_min_size)
 
         active_position = await self._get_active_position(market_id, asset_id, side)
         if active_position:

@@ -191,7 +191,7 @@ class DataClient:
     async def is_market_resolved(self, condition_id: str) -> bool:
         try:
             ctf = self.w3.eth.contract(address=Web3.to_checksum_address(CTF_ADDRESS), abi=CTF_ABI)
-            denominator = ctf.functions.payoutDenominator(condition_id).call()
+            denominator = await ctf.functions.payoutDenominator(condition_id).call()
             return int(denominator) > 0
         except Exception as e:
             logger.error("CTF check failed for %s: %s", condition_id, e)

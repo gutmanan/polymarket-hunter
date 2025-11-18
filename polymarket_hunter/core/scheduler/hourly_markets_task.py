@@ -4,7 +4,7 @@ from datetime import datetime, timezone, time, timedelta
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
-from polymarket_hunter.utils.market import market_has_ended
+from polymarket_hunter.utils.helper import market_has_ended
 
 ISOZ_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -19,7 +19,7 @@ class HourlyMarketsTask(BaseIntervalTask):
     async def get_current_markets(self):
         now = datetime.now(timezone.utc)
         now_iso = now.strftime(ISOZ_FMT)
-        end = datetime.combine(now.date() + timedelta(days=1), time(23, 59, 59, tzinfo=timezone.utc))
+        end = datetime.combine(now.date() + timedelta(days=3), time(23, 59, 59, tzinfo=timezone.utc))
         end_iso = end.strftime(ISOZ_FMT)
 
         markets = await self._gamma.get_all_markets(
@@ -68,7 +68,7 @@ class HourlyMarketsTask(BaseIntervalTask):
                 continue
 
             tags = [t["label"] for t in m["tags"]]
-            if any(tag in tags for tag in ("Sports", "Crypto", "Up or Down", "15M")):
+            if any(tag in tags for tag in ("Sports", "Crypto", "Finance")):
                 continue
 
             slugs.add(slug)

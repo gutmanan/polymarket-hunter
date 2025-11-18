@@ -38,6 +38,7 @@ class OrderService:
         if req.action.order_type == OrderType.MARKET:
             res = self._clob.execute_market_order(
                 token_id=req.asset_id,
+                price=req.price,
                 size=req.size,
                 side=req.side,
                 tif=req.action.time_in_force

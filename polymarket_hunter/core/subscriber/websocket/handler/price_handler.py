@@ -9,7 +9,7 @@ from polymarket_hunter.core.strategy.tend_detector import KalmanTrend
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageHandler, MessageContext
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.trend_prediction import Direction, TrendPrediction
-from polymarket_hunter.utils.market import q3, to_seconds
+from polymarket_hunter.utils.helper import q3, ts_to_seconds
 
 
 class PriceChangeHandler(MessageHandler):
@@ -57,7 +57,7 @@ class PriceChangeHandler(MessageHandler):
 
     def update_trend(self, market: dict[str, Any], msg: Dict[str, Any], ctx: MessageContext) -> None:
         market_id = msg["market"]
-        ts = to_seconds(msg.get("timestamp"))
+        ts = ts_to_seconds(msg.get("timestamp"))
         tick_size = market.get("orderPriceMinTickSize")
 
         with self._lock:

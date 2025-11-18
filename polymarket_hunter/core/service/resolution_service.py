@@ -8,8 +8,8 @@ from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.service.trade_service import TradeService
 from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
+from polymarket_hunter.utils.helper import market_has_ended, ts_to_seconds
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import market_has_ended, to_seconds
 
 logger = setup_logger(__name__)
 
@@ -61,7 +61,7 @@ class ResolutionService:
                     continue
 
                 now = time.time()
-                created_at = to_seconds(o["created_at"])
+                created_at = ts_to_seconds(o["created_at"])
 
                 age = now - created_at
                 if age < STALE_ORDER_SECONDS:

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from decimal import Decimal
 from functools import lru_cache
 from typing import Any, Dict, Optional, List
 
@@ -10,9 +11,9 @@ from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OpenOrderParam
 from py_clob_client.constants import POLYGON
 from py_clob_client.exceptions import PolyApiException
 
-from polymarket_hunter.dal.datamodel.strategy_action import TIF
+from polymarket_hunter.dal.datamodel.strategy_action import TIF, Side
+from polymarket_hunter.utils.helper import with_timeout, retryable, q4, q2
 from polymarket_hunter.utils.logger import setup_logger
-from polymarket_hunter.utils.market import with_timeout, retryable
 
 load_dotenv()
 logger = setup_logger(__name__)
@@ -85,7 +86,7 @@ class CLOBClient:
         if market_id or asset_id:
             params = OpenOrderParams(market=market_id, asset_id=asset_id)
             return self.client.get_orders(params=params)
-        return  self.client.get_orders()
+        return self.client.get_orders()
 
     @retryable()
     async def execute_limit_order_async(self, token_id: str, price: float, size: float, side: str, tif: TIF):
@@ -100,7 +101,7 @@ class CLOBClient:
             signed = self.client.create_order(args)
             return self.client.post_order(signed, orderType=tif)
         except PolyApiException as e:
-            logger.error(f"Unable to place limit order: {e}",)
+            logger.error(f"Unable to place limit order: {e}", )
             return {
                 "success": False,
                 "code": e.status_code,
@@ -108,15 +109,16 @@ class CLOBClient:
             }
 
     @retryable()
-    async def execute_market_order_async(self, token_id: str, size: float, side: str, tif: TIF):
-        return await with_timeout(asyncio.to_thread(self.execute_market_order, token_id, size, side, tif), 10)
+    async def execute_market_order_async(self, token_id: str, price: float, size: float, side: str, tif: TIF):
+        return await with_timeout(asyncio.to_thread(self.execute_market_order, token_id, price, size, side, tif), 10)
 
-    def execute_market_order(self, token_id: str, size: float, side: str, tif: TIF) -> Dict[str, Any]:
+    def execute_market_order(self, token_id: str, price: float, size: float, side: str, tif: TIF) -> Dict[str, Any]:
         """
         Market order: amount is the notional size in quote units the CLOB expects.
         """
         try:
-            args = MarketOrderArgs(token_id=token_id, amount=size, side=side)
+            amount = self._prepare_market_amount(side, price, size)
+            args = MarketOrderArgs(token_id=token_id, amount=amount, side=side)
             signed = self.client.create_market_order(args)
             return self.client.post_order(signed, orderType=tif)
         except PolyApiException as e:
@@ -145,9 +147,23 @@ class CLOBClient:
                 "error": e.error_msg
             }
 
+    def _prepare_market_amount(self, side: str, price: float, size: float) -> float:
+        """
+        Prepares the market amount with required precision.
+        Returns the required value as a float for API submission.
+        """
+        shares_decimal = q4(Decimal(size))
+        price_decimal = q4(Decimal(price))
+        if side == Side.BUY:
+            usdc_effective = q2(shares_decimal * price_decimal)
+            return float(usdc_effective)
+        else:
+            return float(shares_decimal)
+
 @lru_cache(maxsize=1)
 def get_clob_client() -> CLOBClient:
     return CLOBClient()
+
 
 if __name__ == "__main__":
     client = get_clob_client()
