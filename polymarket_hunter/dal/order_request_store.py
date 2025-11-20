@@ -5,7 +5,7 @@ from typing import Optional, List
 
 import redis.asyncio as redis
 
-from polymarket_hunter.config.settings import settings
+from polymarket_hunter.dal import REDIS_CLIENT
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 
 ORDERS_KEY = "hunter:order_requests"
@@ -14,8 +14,8 @@ EVENTS_CHANNEL = "hunter:order_requests:events"
 
 
 class RedisOrderRequestStore:
-    def __init__(self, redis_url: Optional[str] = None):
-        self._redis = redis.from_url(redis_url or settings.REDIS_URL, decode_responses=True)
+    def __init__(self):
+        self._redis = REDIS_CLIENT
 
     @property
     def client(self) -> redis.Redis:

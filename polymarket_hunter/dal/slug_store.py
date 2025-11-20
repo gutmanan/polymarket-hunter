@@ -1,17 +1,17 @@
 import json
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 
 import redis.asyncio as redis
 
-from polymarket_hunter.config.settings import settings
+from polymarket_hunter.dal import REDIS_CLIENT
 
 SLUGS_KEY = "hunter:slugs"
 EVENTS_CHANNEL = "hunter:slugs:events"
 
 
 class RedisSlugStore:
-    def __init__(self, redis_url: Optional[str] = None):
-        self._redis = redis.from_url(redis_url or settings.REDIS_URL, decode_responses=True)
+    def __init__(self):
+        self._redis = REDIS_CLIENT
 
     @property
     def client(self) -> redis.Redis:

@@ -69,7 +69,7 @@ class HourlyMarketsTask(BaseIntervalTask):
                 continue
 
             tags = [t["label"] for t in m["tags"]]
-            if any(tag in tags for tag in ("Sports", "Crypto", "Finance")):
+            if any(tag in tags for tag in ("Sports")):
                 continue
 
             slugs.add(slug)

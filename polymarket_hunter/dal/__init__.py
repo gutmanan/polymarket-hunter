@@ -1,6 +1,11 @@
+import redis.asyncio as redis
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
+
+from polymarket_hunter.config.settings import settings
+
+REDIS_CLIENT = redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 DATABASE_URL = "postgresql+asyncpg://admin:admin@postgres:5432/hunter"
 engine = create_async_engine(DATABASE_URL, echo=False)

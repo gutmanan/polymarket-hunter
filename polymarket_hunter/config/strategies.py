@@ -12,6 +12,7 @@ MIN_LIQ = 1_000  # skip illiquid books
 INTERVAL_TAGS = {"1H", "4H"}
 CRYPTO_TAGS = {"Crypto", "Up or Down"}
 SPORT_TAGS = {"Sports"}
+FINANCE_TAGS = {"Finance"}
 
 
 # ---------- tag helpers ----------
@@ -61,9 +62,89 @@ def ok_liquidity(ctx: MarketContext):
 
 strategies = [
     Strategy(
-        name="Late-Expiry Favorite Clamp (Non-Crypto)",
+        name="Late-Expiry Favorite Clamp (Crypto)",
         condition_fn=lambda ctx: (
-                not has_any(ctx, CRYPTO_TAGS) and not has_any(ctx, SPORT_TAGS)
+                has_all(ctx, CRYPTO_TAGS)
+                and has_any(ctx, INTERVAL_TAGS)
+                and ok_liquidity(ctx)
+                and is_final_window(ctx, dynamic_tf=2)
+        ),
+        rules=[
+            Rule(
+                name="Buy Favorite (Up)",
+                condition_fn=lambda ctx: (
+                        0.75 <= price(ctx, "Up", Side.BUY) <= 0.90
+                        and spread(ctx, "Up") <= CRYPTO_SPREAD
+                ),
+                action=StrategyAction(
+                    side=Side.BUY,
+                    size=10,
+                    outcome="Up",
+                    stop_loss=0.15,
+                    take_profit=0.10
+                ),
+            ),
+            Rule(
+                name="Buy Favorite (Down)",
+                condition_fn=lambda ctx: (
+                        0.75 <= price(ctx, "Down", Side.BUY) <= 0.90
+                        and spread(ctx, "Down") <= CRYPTO_SPREAD
+                ),
+                action=StrategyAction(
+                    side=Side.BUY,
+                    size=10,
+                    outcome="Down",
+                    stop_loss=0.15,
+                    take_profit=0.10
+                ),
+            ),
+        ],
+    ),
+    Strategy(
+        name="Late-Expiry Favorite Clamp (Finance)",
+        condition_fn=lambda ctx: (
+                has_all(ctx, FINANCE_TAGS)
+                and not has_any(ctx, CRYPTO_TAGS)
+                and ok_liquidity(ctx)
+                and is_final_window(ctx, dynamic_tf=2)
+        ),
+        rules=[
+            Rule(
+                name="Buy Favorite (Yes)",
+                condition_fn=lambda ctx: (
+                        0.8 <= price(ctx, "Yes", Side.BUY) <= 0.9
+                        and spread(ctx, "Yes") <= CRYPTO_SPREAD
+                ),
+                action=StrategyAction(
+                    side=Side.BUY,
+                    size=10,
+                    outcome="Yes",
+                    stop_loss=0.15,
+                    take_profit=0.10
+                ),
+            ),
+            Rule(
+                name="Buy Favorite (No)",
+                condition_fn=lambda ctx: (
+                        0.8 <= price(ctx, "No", Side.BUY) <= 0.9
+                        and spread(ctx, "No") <= CRYPTO_SPREAD
+                ),
+                action=StrategyAction(
+                    side=Side.BUY,
+                    size=10,
+                    outcome="No",
+                    stop_loss=0.15,
+                    take_profit=0.10
+                ),
+            ),
+        ],
+    ),
+    Strategy(
+        name="High Probability (Non-Crypto)",
+        condition_fn=lambda ctx: (
+                not has_any(ctx, CRYPTO_TAGS)
+                and not has_any(ctx, SPORT_TAGS)
+                and not has_any(ctx, FINANCE_TAGS)
                 and ok_liquidity(ctx)
         ),
         rules=[
@@ -98,42 +179,3 @@ strategies = [
         ],
     ),
 ]
-
-# Strategy(
-#     name="Late-Expiry Favorite Clamp (Crypto)",
-#     condition_fn=lambda ctx: (
-#             has_all(ctx, CRYPTO_TAGS) and has_any(ctx, INTERVAL_TAGS)
-#             and ok_liquidity(ctx)
-#             and is_final_window(ctx, dynamic_tf=2)
-#     ),
-#     rules=[
-#         Rule(
-#             name="Buy Favorite (Up)",
-#             condition_fn=lambda ctx: (
-#                     0.75 <= price(ctx, "Up", Side.BUY) <= 0.90
-#                     and spread(ctx, "Up") <= CRYPTO_SPREAD
-#             ),
-#             action=StrategyAction(
-#                 side=Side.BUY,
-#                 size=10,
-#                 outcome="Up",
-#                 stop_loss=0.25,
-#                 take_profit=0.10
-#             ),
-#         ),
-#         Rule(
-#             name="Buy Favorite (Down)",
-#             condition_fn=lambda ctx: (
-#                     0.75 <= price(ctx, "Down", Side.BUY) <= 0.90
-#                     and spread(ctx, "Down") <= CRYPTO_SPREAD
-#             ),
-#             action=StrategyAction(
-#                 side=Side.BUY,
-#                 size=10,
-#                 outcome="Down",
-#                 stop_loss=0.25,
-#                 take_profit=0.10
-#             ),
-#         ),
-#     ],
-# ),
