@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.utils.logger import setup_logger
 
@@ -13,10 +11,10 @@ class ReportService:
 
     # -------- Wallet value --------
 
-    async def get_current_wallet_balance(self) -> Decimal:
-        usdc = Decimal(str(self.data.get_usdc_balance() or 0))
-        value = await self.data.get_portfolio_value()
-        total_value = Decimal(str(value[0]["value"] or 0))
+    async def get_current_wallet_balance(self) -> float:
+        usdc = await self.data.get_usdc_balance()
+        portfolio = await self.data.get_portfolio_value()
+        total_value = float(portfolio[0]["value"] if portfolio else 0)
         return usdc + total_value
 
     # -------- Human summary --------

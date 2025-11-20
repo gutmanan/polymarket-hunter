@@ -10,11 +10,13 @@ from polymarket_hunter.api.trades_router import router as trades_router
 from polymarket_hunter.api.webhook_router import router as webhook_router
 from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.service.scheduler_service import SchedulerService
+from polymarket_hunter.core.subscriber.context_subscriber import ContextSubscriber
 from polymarket_hunter.core.subscriber.market_subscriber import MarketSubscriber
 from polymarket_hunter.core.subscriber.notification_subscriber import NotificationsSubscriber
 from polymarket_hunter.core.subscriber.order_subscriber import OrdersSubscriber
 from polymarket_hunter.core.subscriber.trade_subscriber import TradesSubscriber
 from polymarket_hunter.core.subscriber.user_subscriber import UserSubscriber
+from polymarket_hunter.dal import create_db_and_tables
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -22,11 +24,16 @@ logger = setup_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await create_db_and_tables()
+
     market_subscriber = MarketSubscriber()
     await market_subscriber.start()
 
     user_subscriber = UserSubscriber()
     await user_subscriber.start()
+
+    context_subscriber = ContextSubscriber()
+    await context_subscriber.start()
 
     orders_subscriber = OrdersSubscriber()
     await orders_subscriber.start()
@@ -48,6 +55,7 @@ async def lifespan(app: FastAPI):
     finally:
         await market_subscriber.stop()
         await user_subscriber.stop()
+        await context_subscriber.stop()
         await orders_subscriber.stop()
         await trades_subscriber.stop()
         await notification_subscriber.stop()

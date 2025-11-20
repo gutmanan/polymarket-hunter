@@ -85,19 +85,19 @@ class DataClient:
 
     # ---------- wallet actions ----------
 
-    def get_usdc_balance(self, user: str = None) -> float:
+    async def get_usdc_balance(self, user: str = None) -> float:
         usdc = self.w3.eth.contract(address=Web3.to_checksum_address(USDC_ADDRESS), abi=USDC_ABI)
         user_account = Web3.to_checksum_address(user if user is not None else self.address)
-        balance = usdc.functions.balanceOf(user_account).call()
+        balance = await usdc.functions.balanceOf(user_account).call()
         return balance / 10 ** USDC_DECIMALS
 
-    def get_usdc_allowance(self, user: str = None):
+    async def get_usdc_allowance(self, user: str = None):
         user_address = Web3.to_checksum_address(user if user is not None else self.address)
         usdc = self.w3.eth.contract(address=Web3.to_checksum_address(USDC_ADDRESS), abi=USDC_ABI)
         allowances = {}
         for index, address in enumerate([MAIN_EXCHANGE_ADDRESS, NEG_RISK_MARKETS_ADDRESS, NEG_RISK_ADAPTER_ADDRESS]):
             address_cksum = Web3.to_checksum_address(address)
-            allowance = usdc.functions.allowance(user_address, address_cksum).call()
+            allowance = await usdc.functions.allowance(user_address, address_cksum).call()
             allowances[index] = allowance
         return allowances
 

@@ -35,21 +35,21 @@ class OrderService:
             logger.warning("Invalid OrderRequest payload: %s", e, exc_info=True)
             return
 
-        if req.action.order_type == OrderType.MARKET:
+        if req.order_type == OrderType.MARKET:
             res = self._clob.execute_market_order(
                 token_id=req.asset_id,
                 price=req.price,
                 size=req.size,
                 side=req.side,
-                tif=req.action.time_in_force
+                tif=req.tif
             )
-        elif req.action.order_type == OrderType.LIMIT:
+        elif req.order_type == OrderType.LIMIT:
             res = self._clob.execute_limit_order(
                 token_id=req.asset_id,
                 price=req.price,
                 size=req.size,
                 side=req.side,
-                tif=req.action.time_in_force
+                tif=req.tif
             )
         else:
             raise NotImplementedError
@@ -72,13 +72,13 @@ class OrderService:
             await self._order_store.remove(req.market_id, req.asset_id, Side.SELL)
 
     async def _build_trade_record(self, req: OrderRequest, res: Dict[str, Any]) -> TradeRecord:
-        market_id =req.market_id
+        market_id = req.market_id
         asset_id = req.asset_id
         side = req.side
         order_id = res.get("orderID")
         status = (res.get("status") or "").upper() or "LIVE"
-        size_orig = float(res.get("makingAmount", 0)) if side == Side.BUY else float(res.get("takingAmount", 0))
-        size_mat = float(res.get("takingAmount", 0)) if side == Side.BUY else float(res.get("makingAmount", 0))
+        size_orig = float(res.get("makingAmount", 0) or 0) if side == Side.BUY else float(res.get("takingAmount", 0) or 0)
+        size_mat = float(res.get("takingAmount", 0) or 0) if side == Side.BUY else float(res.get("makingAmount", 0) or 0)
         price = size_orig / size_mat if size_mat > 0 else 0
 
         return TradeRecord(
@@ -86,13 +86,13 @@ class OrderService:
             asset_id=asset_id,
             side=side,
             order_id=order_id,
-            slug=req.context.slug,
+            slug=req.context.slug if req.context else '',
             outcome=req.outcome,
             matched_amount=size_mat,
             size=size_orig,
             price=price,
             transaction_hash=res.get("transactionsHashes")[0] if res.get("transactionsHashes") else None,
-            trader_side="TAKER" if req.action.order_type == OrderType.MARKET else None,
+            trader_side="TAKER" if req.order_type == OrderType.MARKET else None,
             status=status,
             active=True,
             raw_events=[dict(res)],

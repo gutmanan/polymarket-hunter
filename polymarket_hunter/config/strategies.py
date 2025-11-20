@@ -6,8 +6,8 @@ from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
 from polymarket_hunter.utils.helper import time_left_sec, late_threshold_sec
 
 CRYPTO_SPREAD = 0.03  # per-outcome spread cap for safer fills
-NON_CRYPTO_SPREAD = 0.05
-MIN_LIQ = 10_000  # skip illiquid books
+NON_CRYPTO_SPREAD = 0.08
+MIN_LIQ = 1_000  # skip illiquid books
 
 INTERVAL_TAGS = {"1H", "4H"}
 CRYPTO_TAGS = {"Crypto", "Up or Down"}
@@ -54,8 +54,6 @@ def spread(ctx: MarketContext, outcome: str):
 
 def ok_liquidity(ctx: MarketContext):
     try:
-        if "november-18" in ctx.slug:
-            print(ctx.slug, ctx.liquidity, ctx.outcome_prices.get("Yes", {}).get("BUY", 0))
         return float(ctx.liquidity) >= MIN_LIQ
     except Exception:
         return False
@@ -72,29 +70,29 @@ strategies = [
             Rule(
                 name="Buy Favorite (Yes)",
                 condition_fn=lambda ctx: (
-                        0.75 <= price(ctx, "Yes", Side.BUY) <= 0.90
+                        0.7 <= price(ctx, "Yes", Side.BUY) <= 0.9
                         and spread(ctx, "Yes") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="Yes",
-                    stop_loss=0.20,
-                    take_profit=0.15,
+                    stop_loss=0.10,
+                    take_profit=0.10,
                 ),
             ),
             Rule(
                 name="Buy Favorite (No)",
                 condition_fn=lambda ctx: (
-                        0.75 <= price(ctx, "No", Side.BUY) <= 0.90
+                        0.7 <= price(ctx, "No", Side.BUY) <= 0.9
                         and spread(ctx, "No") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
                     outcome="No",
-                    stop_loss=0.20,
-                    take_profit=0.15,
+                    stop_loss=0.10,
+                    take_profit=0.10,
                 ),
             ),
         ],

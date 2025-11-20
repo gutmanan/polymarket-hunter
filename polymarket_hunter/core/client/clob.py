@@ -89,10 +89,10 @@ class CLOBClient:
         return self.client.get_orders()
 
     @retryable()
-    async def execute_limit_order_async(self, token_id: str, price: float, size: float, side: str, tif: TIF):
+    async def execute_limit_order_async(self, token_id: str, price: float, size: float, side: Side, tif: TIF):
         return await with_timeout(asyncio.to_thread(self.execute_limit_order, token_id, price, size, side, tif), 10)
 
-    def execute_limit_order(self, token_id: str, price: float, size: float, side: str, tif: TIF) -> Dict[str, Any]:
+    def execute_limit_order(self, token_id: str, price: float, size: float, side: Side, tif: TIF) -> Dict[str, Any]:
         """
         CLOB-native limit order. side: 0=BUY, 1=SELL (use py_clob_client.order_builder.constants BUY/SELL)
         """

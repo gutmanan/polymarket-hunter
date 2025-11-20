@@ -17,10 +17,10 @@ class KalmanTrend:
             q0: float = 1e-6,
             r_floor: float = 1e-5,
             max_dt: float = 1.0,
-            t_enter: float = 3.0,  # need this to switch to UP/DOWN
-            t_hold: float = 2.0,  # stay in current direction if |t|>=t_hold
-            t_alpha: float = 0.3,  # EMA on t-stat to avoid flicker
-            reset_z: float = 8.0,  # reset on huge innovation
+            t_enter: float = 2.5,   # need this to switch to UP/DOWN
+            t_hold: float = 1.8,    # stay in current direction if |t|>=t_hold
+            t_alpha: float = 0.3,   # EMA on t-stat to avoid flicker
+            reset_z: float = 8.0,   # reset on huge innovation
             reset_inflate: float = 10.0,
     ):
         self.use_logit, self.q0, self.r_floor, self.max_dt = use_logit, q0, r_floor, max_dt
@@ -102,7 +102,8 @@ class KalmanTrend:
 
         # R from spread/tick/staleness; map to measurement space via jac^2
         var_p = self._var_from_spread(spread) * (1.0 + 2.0 * dt)  # staleness boost
-        if tick_size and tick_size > 0: var_p = max(var_p, (tick_size ** 2) / 12.0)
+        if tick_size and tick_size > 0:
+            var_p = max(var_p, (tick_size ** 2) / 12.0)
         var_p = max(var_p, self.r_floor)
         kf.R[0, 0] = (jac * jac) * var_p
 
@@ -122,7 +123,6 @@ class KalmanTrend:
         t = t_prev + self.t_alpha * (raw_t - t_prev)
         self._t_ema[key] = t
 
-        d_prev = self._dir.get(key)
         d: Direction = Direction.FLAT
         if t >= self.t_enter or (t >= self.t_hold and self._dir.get(key) == Direction.UP):
             d = Direction.UP

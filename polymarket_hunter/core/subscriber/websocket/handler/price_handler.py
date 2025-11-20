@@ -8,7 +8,7 @@ from polymarket_hunter.core.strategy.strategy_evaluator import StrategyEvaluator
 from polymarket_hunter.core.strategy.tend_detector import KalmanTrend
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageHandler, MessageContext
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
-from polymarket_hunter.dal.datamodel.trend_prediction import Direction, TrendPrediction
+from polymarket_hunter.dal.datamodel.trend_prediction import TrendPrediction
 from polymarket_hunter.utils.helper import q3, ts_to_seconds
 
 
@@ -70,10 +70,6 @@ class PriceChangeHandler(MessageHandler):
                 mid, spread = (ask + bid) / 2, ask - bid
                 key = f"{market_id}:{asset_id}"
                 trend = self._trend_detector.update(key, mid=mid, spread=spread, ts=ts, tick_size=tick_size)
-
-                if trend.direction == Direction.FLAT:
-                    continue
-
                 prev: TrendPrediction = data.get("trend")
                 if prev and trend.direction != prev.direction:
                     data["trend"] = trend.model_copy(update={
@@ -102,7 +98,7 @@ class PriceChangeHandler(MessageHandler):
             end_date=market.get("endDate"),
             liquidity=float(market.get("liquidity", 0)),
             order_min_size=market.get("orderMinSize", 1),
-            order_min_price_tick_size=market.get("orderPriceMinTickSize"),
+            order_min_price_tick_size=market.get("orderPriceMinTickSize", 0.01),
             spread=market.get("spread", 0),
             competitive=market.get("competitive", 1),
             one_hour_price_change=market.get("oneHourPriceChange", 0),
