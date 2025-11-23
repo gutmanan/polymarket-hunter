@@ -1,5 +1,5 @@
+import asyncio
 import json
-import threading
 from typing import Dict, Any, Optional
 
 from py_clob_client.order_builder.constants import BUY, SELL
@@ -18,7 +18,7 @@ class PriceChangeHandler(MessageHandler):
         self._price_map: Dict[str, Dict[str, Dict[str, Any]]] = {}
         self._trend_detector = KalmanTrend()
         self._evaluator = StrategyEvaluator()
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
 
     event_types = ["price_change"]
 
@@ -27,19 +27,19 @@ class PriceChangeHandler(MessageHandler):
         market_id = msg["market"]
         market = ctx.markets.get(market_id)
         if market:
-            self.update_prices(market, msg, ctx)
-            self.update_trend(market, msg, ctx)
-            context = self.build_context(market, msg)
+            await self.update_prices(market, msg)
+            await self.update_trend(market, msg)
+            context = await self.build_context(market, msg)
             await self._evaluator.evaluate(context)
 
     # ---------- pricing ----------
 
-    def update_prices(self, market: dict[str, Any], msg: Dict[str, Any], ctx: MessageContext) -> None:
+    async def update_prices(self, market: dict[str, Any], msg: Dict[str, Any]) -> None:
         market_id = msg["market"]
         token_ids = json.loads(market["clobTokenIds"])
         outcomes = json.loads(market["outcomes"])
 
-        with self._lock:
+        async with self._lock:
             market_book = self._price_map.setdefault(market_id, {})
             for pc in msg["price_changes"]:
                 asset_id = pc["asset_id"]
@@ -55,12 +55,12 @@ class PriceChangeHandler(MessageHandler):
                 if best_bid is not None:
                     asset_book[SELL] = q3(best_bid)
 
-    def update_trend(self, market: dict[str, Any], msg: Dict[str, Any], ctx: MessageContext) -> None:
+    async def update_trend(self, market: dict[str, Any], msg: Dict[str, Any]) -> None:
         market_id = msg["market"]
         ts = ts_to_seconds(msg.get("timestamp"))
         tick_size = market.get("orderPriceMinTickSize")
 
-        with self._lock:
+        async with self._lock:
             market_book = self._price_map.get(market_id, {})
             for asset_id, data in market_book.items():
                 ask, bid = map(lambda s: float(data.get(s, 0)), (BUY, SELL))
@@ -70,8 +70,9 @@ class PriceChangeHandler(MessageHandler):
                 mid, spread = (ask + bid) / 2, ask - bid
                 key = f"{market_id}:{asset_id}"
                 trend = self._trend_detector.update(key, mid=mid, spread=spread, ts=ts, tick_size=tick_size)
+
                 prev: TrendPrediction = data.get("trend")
-                if prev and trend.direction != prev.direction:
+                if prev and trend.direction != "FLAT" and trend.direction != prev.direction:
                     data["trend"] = trend.model_copy(update={
                         "reversal": True,
                         "flipped_from": prev.direction,
@@ -80,14 +81,14 @@ class PriceChangeHandler(MessageHandler):
                     continue
 
                 data["trend"] = trend.model_copy(update={
-                    "reversal": prev.reversal if prev else False,
+                    "reversal": False,
                     "flipped_from": prev.flipped_from if prev else None,
                     "flipped_ts": prev.flipped_ts if prev else None
                 })
 
     # ---------- context lifecycle ----------
 
-    def build_context(self, market: dict[str, Any], msg: Dict[str, Any]):
+    async def build_context(self, market: dict[str, Any], msg: Dict[str, Any]):
         return MarketContext(
             condition_id=market["conditionId"],
             slug=market["slug"],
@@ -105,15 +106,15 @@ class PriceChangeHandler(MessageHandler):
             one_day_price_change=market.get("oneDayPriceChange", 0),
             outcomes=json.loads(market["outcomes"]),
             clob_token_ids=json.loads(market["clobTokenIds"]),
-            outcome_prices=self.get_outcome_prices(market["conditionId"]),
-            outcome_assets=self.get_outcome_assets(market["conditionId"]),
-            outcome_trends=self.get_outcome_trends(market["conditionId"]),
+            outcome_prices=await self.get_outcome_prices(market["conditionId"]),
+            outcome_assets=await self.get_outcome_assets(market["conditionId"]),
+            outcome_trends=await self.get_outcome_trends(market["conditionId"]),
             tags=set([t["label"] for t in market["tags"]]),
             event_ts=msg["timestamp"]
         )
 
-    def get_outcome_prices(self, market_id: str) -> dict[str, dict[str, Any]]:
-        with self._lock:
+    async def get_outcome_prices(self, market_id: str) -> dict[str, dict[str, Any]]:
+        async with self._lock:
             if market_id not in self._price_map:
                 return {}
             return {
@@ -123,16 +124,16 @@ class PriceChangeHandler(MessageHandler):
                 } for asset_id, data in self._price_map[market_id].items()
             }
 
-    def get_outcome_assets(self, market_id: str) -> dict[str, str]:
-        with self._lock:
+    async def get_outcome_assets(self, market_id: str) -> dict[str, str]:
+        async with self._lock:
             if market_id not in self._price_map:
                 return {}
             return {
                 data["outcome"]: asset_id for asset_id, data in self._price_map[market_id].items()
             }
 
-    def get_outcome_trends(self, market_id: str) -> dict[str, Optional[TrendPrediction]]:
-        with self._lock:
+    async def get_outcome_trends(self, market_id: str) -> dict[str, Optional[TrendPrediction]]:
+        async with self._lock:
             if market_id not in self._price_map:
                 return {}
             return {

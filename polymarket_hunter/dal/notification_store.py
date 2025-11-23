@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import redis.asyncio as redis
 
-from polymarket_hunter.dal import REDIS_CLIENT
 from polymarket_hunter.dal.datamodel.notification import Notification
+from polymarket_hunter.dal.db import REDIS_CLIENT
 
 EVENTS_CHANNEL = "hunter:notifications:events"
 

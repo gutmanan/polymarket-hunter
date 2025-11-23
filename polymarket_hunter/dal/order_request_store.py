@@ -5,8 +5,8 @@ from typing import Optional, List
 
 import redis.asyncio as redis
 
-from polymarket_hunter.dal import REDIS_CLIENT
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
+from polymarket_hunter.dal.db import REDIS_CLIENT
 
 ORDERS_KEY = "hunter:order_requests"
 DOC_PREFIX = "hunter:order_requests:doc:"

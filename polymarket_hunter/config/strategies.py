@@ -6,8 +6,8 @@ from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
 from polymarket_hunter.utils.helper import time_left_sec, late_threshold_sec
 
 CRYPTO_SPREAD = 0.03  # per-outcome spread cap for safer fills
-NON_CRYPTO_SPREAD = 0.08
-MIN_LIQ = 1_000  # skip illiquid books
+NON_CRYPTO_SPREAD = 0.05
+MIN_LIQ = 5_000  # skip illiquid books
 
 INTERVAL_TAGS = {"1H", "4H"}
 CRYPTO_TAGS = {"Crypto", "Up or Down"}
@@ -158,7 +158,7 @@ strategies = [
                     side=Side.BUY,
                     size=10,
                     outcome="Yes",
-                    stop_loss=0.10,
+                    stop_loss=0.15,
                     take_profit=0.10,
                 ),
             ),
@@ -172,7 +172,7 @@ strategies = [
                     side=Side.BUY,
                     size=10,
                     outcome="No",
-                    stop_loss=0.10,
+                    stop_loss=0.15,
                     take_profit=0.10,
                 ),
             ),

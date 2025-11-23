@@ -3,7 +3,7 @@ from typing import Iterable, List
 
 import redis.asyncio as redis
 
-from polymarket_hunter.dal import REDIS_CLIENT
+from polymarket_hunter.dal.db import REDIS_CLIENT
 
 SLUGS_KEY = "hunter:slugs"
 EVENTS_CHANNEL = "hunter:slugs:events"

@@ -25,7 +25,7 @@ class OrderService:
         self._trade_store = RedisTradeRecordStore()
         self._notifier = RedisNotificationStore()
 
-    async def execute_order(self, payload: dict[str, Any]):
+    async def serve(self, payload: dict[str, Any]):
         if payload["action"] != "add":
             return
 
@@ -58,27 +58,25 @@ class OrderService:
         is_success = bool(res.get("success"))
 
         if is_success:
-            tr = await self._build_trade_record(req, res)
-            await self._trade_store.add(tr)
+            tr = self._build_trade_record(req, res)
+            await self._deactivate_opposite(tr)
+            await self._trade_store.add(req, tr)
 
-        """
-        1. we remove the order from the order_store if it is a sell order and the order was successful. 
-        2. we also remove the order from the order_store if it is a buy order and the order was not successful.
-        * so we can try to sell again or buy again.
-        """
         if is_success == (req.side == Side.SELL):
             await self._order_store.remove(req.market_id, req.asset_id, Side.BUY)
         else:
             await self._order_store.remove(req.market_id, req.asset_id, Side.SELL)
 
-    async def _build_trade_record(self, req: OrderRequest, res: Dict[str, Any]) -> TradeRecord:
+    def _build_trade_record(self, req: OrderRequest, res: Dict[str, Any]) -> TradeRecord:
         market_id = req.market_id
         asset_id = req.asset_id
         side = req.side
         order_id = res.get("orderID")
         status = (res.get("status") or "").upper() or "LIVE"
-        size_orig = float(res.get("makingAmount", 0) or 0) if side == Side.BUY else float(res.get("takingAmount", 0) or 0)
-        size_mat = float(res.get("takingAmount", 0) or 0) if side == Side.BUY else float(res.get("makingAmount", 0) or 0)
+        size_orig = float(res.get("makingAmount", 0) or 0) if side == Side.BUY else float(
+            res.get("takingAmount", 0) or 0)
+        size_mat = float(res.get("takingAmount", 0) or 0) if side == Side.BUY else float(
+            res.get("makingAmount", 0) or 0)
         price = size_orig / size_mat if size_mat > 0 else 0
 
         return TradeRecord(
@@ -98,3 +96,11 @@ class OrderService:
             raw_events=[dict(res)],
             matched_ts=time.time()
         )
+
+    async def _deactivate_opposite(self, tr):
+        opposite_side = Side.BUY if tr.side == Side.SELL else Side.SELL
+        existing_opposite = await self._trade_store.get_active(tr.market_id, tr.asset_id, opposite_side)
+        if existing_opposite:
+            deactivate = existing_opposite.model_copy(update={"active": False})
+            deactivate.touch()
+            await self._trade_store.update(deactivate)

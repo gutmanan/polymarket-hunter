@@ -17,8 +17,8 @@ class KalmanTrend:
             q0: float = 1e-6,
             r_floor: float = 1e-5,
             max_dt: float = 1.0,
-            t_enter: float = 2.5,   # need this to switch to UP/DOWN
-            t_hold: float = 1.8,    # stay in current direction if |t|>=t_hold
+            t_enter: float = 2.0,   # need this to switch to UP/DOWN
+            t_hold: float = 1.0,    # stay in current direction if |t|>=t_hold
             t_alpha: float = 0.3,   # EMA on t-stat to avoid flicker
             reset_z: float = 8.0,   # reset on huge innovation
             reset_inflate: float = 10.0,

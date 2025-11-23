@@ -1,10 +1,8 @@
 from typing import Any
 
-from sqlalchemy.exc import SQLAlchemyError
-
-from polymarket_hunter.dal import get_postgres_session
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.market_snapshot import MarketSnapshot
+from polymarket_hunter.dal.db import write_object
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -12,7 +10,17 @@ logger = setup_logger(__name__)
 
 class ContextService:
 
-    async def _flatten_context(self, context: MarketContext) -> MarketSnapshot:
+    async def serve(self, payload: dict[str, Any]):
+        try:
+            context = MarketContext.model_validate_json(payload["context"])
+        except Exception as e:
+            logger.error(f"Failed to validate context payload: {e}")
+            return
+
+        snapshot = self._build_snapshot(context)
+        await write_object(snapshot)
+
+    def _build_snapshot(self, context: MarketContext) -> MarketSnapshot:
         return MarketSnapshot(
             condition_id=context.condition_id,
             slug=context.slug,
@@ -37,22 +45,3 @@ class ContextService:
             event_ts=context.event_ts,
             created_ts=context.created_ts
         )
-
-    async def persist(self, payload: dict[str, Any]):
-        try:
-            context = MarketContext.model_validate_json(payload["context"])
-        except Exception as e:
-            logger.error(f"Failed to validate context payload: {e}")
-            return
-
-        snapshot = await self._flatten_context(context)
-        async for session in get_postgres_session():
-            try:
-                session.add(snapshot)
-                await session.commit()
-                await session.refresh(snapshot)
-            except SQLAlchemyError as e:
-                await session.rollback()
-                logger.error(f"Database error during persistence: {e}")
-            except Exception as e:
-                logger.error(f"Unexpected error during persistence: {e}")

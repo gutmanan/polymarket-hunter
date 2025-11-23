@@ -9,25 +9,19 @@ class ReportService:
     def __init__(self):
         self.data = get_data_client()
 
-    # -------- Wallet value --------
+    # ---------- utilities ----------
 
-    async def get_current_wallet_balance(self) -> float:
+    async def _get_wallet_balance(self) -> float:
         usdc = await self.data.get_usdc_balance()
         portfolio = await self.data.get_portfolio_value()
         total_value = float(portfolio[0]["value"] if portfolio else 0)
         return usdc + total_value
 
-    # -------- Human summary --------
+    # ---------- public APIs ----------
 
     async def generate_summary(self, *, hours_back: int) -> str:
-        bal = await self.get_current_wallet_balance()
+        bal = await self._get_wallet_balance()
         return (
             f"📊 <b>Performance</b>\n"
             f"💼 Wallet (USDC + Portfolio): {bal}\n"
         )
-
-
-if __name__ == "__main__":
-    svc = ReportService()
-    # sync-friendly usage (DataClient methods used here are sync)
-    print(svc.generate_summary(hours_back=24))

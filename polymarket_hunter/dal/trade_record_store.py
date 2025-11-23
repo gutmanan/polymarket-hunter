@@ -5,8 +5,9 @@ from typing import Optional, List, AsyncIterator
 
 import redis.asyncio as redis
 
-from polymarket_hunter.dal import REDIS_CLIENT
+from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
+from polymarket_hunter.dal.db import REDIS_CLIENT
 
 TRADE_RECORDS_KEY = "hunter:trade_records"
 DOC_PREFIX = "hunter:trade_records:doc:"
@@ -63,7 +64,7 @@ class RedisTradeRecordStore:
     async def contains(self, market_id: str, asset_id: str, side: str, order_id) -> bool:
         return await self._redis.sismember(TRADE_RECORDS_KEY, self._set_key(market_id, asset_id, side, order_id))
 
-    async def add(self, rec: TradeRecord) -> None:
+    async def add(self, req: OrderRequest, rec: TradeRecord) -> None:
         """
         Upsert behavior:
         - ensure the key exists in hunter:trade_records set
@@ -72,15 +73,16 @@ class RedisTradeRecordStore:
         """
         skey = self._set_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
         dkey = self._doc_key(rec.market_id, rec.asset_id, rec.side, rec.order_id)
-        raw = rec.model_dump_json()
+        raw_order = req.model_dump_json()
+        raw_trade = rec.model_dump_json()
 
         pipe = self._redis.pipeline(transaction=True)
         pipe.sadd(TRADE_RECORDS_KEY, skey)
-        pipe.set(dkey, raw)
+        pipe.set(dkey, raw_trade)
         sadd_res, _ = await pipe.execute()
 
         event = "add" if sadd_res == 1 else "update"
-        await self._publish({"action": event, "key": skey, "trade_record": raw})
+        await self._publish({"action": event, "key": skey, "order_request": raw_order, "trade_record": raw_trade})
 
     async def get(self, market_id: str, asset_id: str, side: str, order_id: str) -> Optional[TradeRecord]:
         raw = await self._redis.get(self._doc_key(market_id, asset_id, side, order_id))

@@ -29,7 +29,7 @@ class OrdersSubscriber:
         while True:
             try:
                 async for payload in self._store.subscribe_events():
-                    await self._service.execute_order(payload)
+                    await self._service.serve(payload)
                 backoff = 0.5  # reset if stream ended cleanly
             except asyncio.CancelledError:
                 break

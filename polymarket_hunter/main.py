@@ -16,7 +16,7 @@ from polymarket_hunter.core.subscriber.notification_subscriber import Notificati
 from polymarket_hunter.core.subscriber.order_subscriber import OrdersSubscriber
 from polymarket_hunter.core.subscriber.trade_subscriber import TradesSubscriber
 from polymarket_hunter.core.subscriber.user_subscriber import UserSubscriber
-from polymarket_hunter.dal import create_db_and_tables
+from polymarket_hunter.dal.db import create_db_and_tables
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)

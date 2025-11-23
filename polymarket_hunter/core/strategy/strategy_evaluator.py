@@ -6,7 +6,7 @@ from polymarket_hunter.core.notifier.formatter.exit_message_formatter import for
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest, RequestSource
 from polymarket_hunter.dal.datamodel.strategy import Rule, Strategy
-from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
+from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side, OrderType
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.datamodel.trend_prediction import Direction
 from polymarket_hunter.dal.market_context_store import RedisMarketContextStore
@@ -116,7 +116,7 @@ class StrategyEvaluator:
             market_id=market_id,
             asset_id=asset_id,
             outcome=outcome,
-            price=current_price.__float__(),
+            price=float(current_price),
             size=max(action.size, context.order_min_size),
             side=side,
             tif=action.time_in_force,
@@ -151,6 +151,7 @@ class StrategyEvaluator:
 
         stop: float = enter_request.action.stop_loss
         tp: float = enter_request.action.take_profit
+        slippage: float = enter_request.action.slippage
 
         if entry_side == Side.BUY:
             hit_stop = current_price <= entry_price - stop
@@ -165,6 +166,14 @@ class StrategyEvaluator:
         request_source = RequestSource.STRATEGY_EXIT
 
         if hit_stop:
+            stop_price = entry_price - stop
+            acceptable_stop_price = stop_price - slippage
+            if float(current_price) < acceptable_stop_price:
+                logger.warning(
+                    f"[SLIPPAGE BLOCK] SL triggered but current Bid {float(current_price):.3f} is below acceptable stop price {acceptable_stop_price:.3f} for {context.slug}."
+                )
+                return None
+
             request_source = RequestSource.STOP_LOSS
             message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=True)
             await self._notifier.send_message(message)
@@ -173,16 +182,20 @@ class StrategyEvaluator:
             message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=False)
             await self._notifier.send_message(message)
 
+        order_type = OrderType.MARKET
+        if request_source == RequestSource.STRATEGY_EXIT and enter_request.action.order_type is not None:
+            order_type = enter_request.action.order_type
+
         # Build and return exit OrderRequest
         return OrderRequest(
             market_id=market_id,
             asset_id=asset_id,
             outcome=outcome,
-            price=current_price.__float__(),
+            price=float(current_price),
             size=exit_size,
             side=exit_side,
             tif=enter_request.action.time_in_force,
-            order_type=enter_request.action.order_type,
+            order_type=order_type,
             request_source=request_source,
             action=enter_request.action,
             context=context,

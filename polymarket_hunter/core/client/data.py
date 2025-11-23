@@ -116,13 +116,13 @@ class DataClient:
         nonce = await self.w3.eth.get_transaction_count(self.address)
         gas_price = await self.w3.eth.gas_price
 
-        tx = ctf.functions.splitPosition(
+        tx = await ctf.functions.splitPosition(
             Web3.to_checksum_address(USDC_ADDRESS),  # collateralToken
             ZERO_B32,  # parentCollectionId (top-level)
-            Web3.to_bytes(text=condition_id),  # conditionId
+            Web3.to_bytes(hexstr=condition_id),  # conditionId
             partition,  # index sets (e.g., [1,2])
             int(amount_wei)  # amount (complete sets)
-        ).buildTransaction({
+        ).build_transaction({
             "from": self.address,
             "nonce": nonce,
             "gasPrice": gas_price
@@ -144,13 +144,13 @@ class DataClient:
         nonce = await self.w3.eth.get_transaction_count(self.address)
         gas_price = await self.w3.eth.gas_price
 
-        tx = ctf.functions.mergePositions(
+        tx = await ctf.functions.mergePositions(
             Web3.to_checksum_address(USDC_ADDRESS),  # collateralToken
             ZERO_B32,  # parentCollectionId (top-level)
-            Web3.to_bytes(text=condition_id),  # conditionId
+            Web3.to_bytes(hexstr=condition_id),  # conditionId
             partition,  # index sets (e.g., [1,2])
             int(amount_wei)  # amount to merge (complete sets)
-        ).buildTransaction({
+        ).build_transaction({
             "from": self.address,
             "nonce": nonce,
             "gasPrice": gas_price
@@ -173,10 +173,10 @@ class DataClient:
         nonce = await self.w3.eth.get_transaction_count(self.address)
         gas_price = await self.w3.eth.gas_price
 
-        tx = ctf.functions.redeemPositions(
+        tx = await ctf.functions.redeemPositions(
             Web3.to_checksum_address(USDC_ADDRESS),
             ZERO_B32,
-            Web3.to_bytes(text=condition_id),
+            Web3.to_bytes(hexstr=condition_id),
             partition
         ).build_transaction({
             "from": self.address,

@@ -20,7 +20,7 @@ class HourlyMarketsTask(BaseIntervalTask):
         now = datetime.now(timezone.utc)
         start = datetime.combine(now.date() - timedelta(days=1), time(0, 0, 0, tzinfo=timezone.utc))
         start_iso = start.strftime(ISOZ_FMT)
-        end = datetime.combine(now.date() + timedelta(days=7), time(23, 59, 59, tzinfo=timezone.utc))
+        end = datetime.combine(now.date() + timedelta(days=32), time(23, 59, 59, tzinfo=timezone.utc))
         end_iso = end.strftime(ISOZ_FMT)
 
         markets = await self._gamma.get_all_markets(
@@ -69,7 +69,7 @@ class HourlyMarketsTask(BaseIntervalTask):
                 continue
 
             tags = [t["label"] for t in m["tags"]]
-            if any(tag in tags for tag in ("Sports")):
+            if any(tag in tags for tag in ("Sports", "Crypto", "Finance")):
                 continue
 
             slugs.add(slug)
