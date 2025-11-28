@@ -1,36 +1,45 @@
 import json
 
 from fastapi import APIRouter
+from sqlmodel import select
 
 from polymarket_hunter.api.datamodel.order_request import ApiOrderRequest
+from polymarket_hunter.api.datamodel.order_update_request import ApiOrderUpdateRequest
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest, RequestSource
+from polymarket_hunter.dal.datamodel.strategy_action import Side
+from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
+from polymarket_hunter.dal.datamodel.trade_snapshot import TradeSnapshot
+from polymarket_hunter.dal.db import get_object, write_object
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
+from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 router = APIRouter()
 order_store = RedisOrderRequestStore()
+trade_store = RedisTradeRecordStore()
 gamma = get_gamma_client()
+
+
+async def _derive_market_keys(slug: str, outcome: str):
+    market = await gamma.get_market_by_slug(slug)
+    market_id = market["conditionId"]
+    outcomes = json.loads(market["outcomes"])
+    token_ids = json.loads(market["clobTokenIds"])
+    token_id = token_ids[outcomes.index(outcome)]
+    return market_id, token_id
 
 
 @router.get("/order/{slug}/{outcome}/{side}")
 async def get_order(slug: str, outcome: str, side: str):
-    market = await gamma.get_market_by_slug(slug)
-    market_id = market["conditionId"]
-    token_ids = json.loads(market["clobTokenIds"])
-    outcomes = json.loads(market["outcomes"])
-    token_id = token_ids[outcomes.index(outcome)]
+    market_id, token_id = await _derive_market_keys(slug, outcome)
     return await order_store.get(market_id, token_id, side)
 
 
 @router.put("/order")
 async def place_order(payload: ApiOrderRequest):
-    market = await gamma.get_market_by_slug(payload.slug)
-    market_id = market["conditionId"]
-    token_ids = json.loads(market["clobTokenIds"])
-    outcomes = json.loads(market["outcomes"])
-    token_id = token_ids[outcomes.index(payload.outcome)]
+    market_id, token_id = await _derive_market_keys(payload.slug, payload.outcome)
     return await order_store.add(OrderRequest(
         market_id=market_id,
         asset_id=token_id,
@@ -42,3 +51,33 @@ async def place_order(payload: ApiOrderRequest):
         order_type=payload.order_type,
         request_source=RequestSource.API_CALL
     ))
+
+
+@router.post("/order", status_code=200)
+async def update_order(payload: ApiOrderUpdateRequest):
+    market_id, asset_id = await _derive_market_keys(payload.slug, payload.outcome)
+    existing_order = await order_store.get(market_id, asset_id, Side.BUY)
+    if not existing_order:
+        return {"error": "Active order not found"}, 404
+
+    updated_action = existing_order.action.model_copy(update={
+        "slippage": payload.slippage if payload.slippage is not None else existing_order.action.slippage,
+        "stop_loss": payload.stop_loss if payload.stop_loss is not None else existing_order.action.stop_loss,
+        "take_profit": payload.take_profit if payload.take_profit is not None else existing_order.action.take_profit
+    })
+
+    updated_order = existing_order.model_copy(update={"action": updated_action})
+    await order_store.update(updated_order)
+
+    statement = select(TradeSnapshot).where(True,
+                                            TradeSnapshot.market_id == market_id,
+                                            TradeSnapshot.asset_id == asset_id,
+                                            TradeSnapshot.side == Side.BUY
+                                            )
+    db_snapshot = await get_object(statement)
+
+    if db_snapshot:
+        db_snapshot.strategy_action = updated_action.model_dump()
+        await write_object(db_snapshot)
+
+    return {"status": "ok", "message": "Risk parameters updated successfully in Redis and Postgres."}

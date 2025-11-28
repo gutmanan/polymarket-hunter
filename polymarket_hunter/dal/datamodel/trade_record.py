@@ -5,6 +5,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
+from polymarket_hunter.dal.datamodel.order_request import OrderRequest
+
 
 class TradeRecord(BaseModel):
     model_config = ConfigDict(use_enum_values=True, extra="ignore")
@@ -23,6 +25,7 @@ class TradeRecord(BaseModel):
     status: str = "LIVE"
     active: bool = True
     error: Optional[Any] = None
+    order_request: Optional[OrderRequest] = None
     raw_events: Optional[list[dict[str, Any]]] = Field(default_factory=list)
     event_type: str = "placement"
     matched_ts: Optional[float] = 0

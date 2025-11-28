@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from polymarket_hunter.core.notifier.formatter.place_order_formatter import format_trade_record_message
-from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.datamodel.trade_snapshot import TradeSnapshot
 from polymarket_hunter.dal.db import write_object
@@ -22,17 +21,16 @@ class TradeService:
             return
 
         try:
-            req = OrderRequest.model_validate_json(payload["order_request"])
             tr = TradeRecord.model_validate_json(payload["trade_record"])
         except Exception as e:
-            logger.warning("Invalid TradeRecord payload: %s", e, exc_info=True)
+            logger.warning("Invalid payload: %s", e, exc_info=True)
             return
 
-        snapshot = self._build_snapshot(req, tr)
+        snapshot = self._build_snapshot(tr)
         await write_object(snapshot)
         await self._notifier.send_message(format_trade_record_message(tr))
 
-    def _build_snapshot(self, req: OrderRequest, tr: TradeRecord) -> TradeSnapshot:
+    def _build_snapshot(self, tr: TradeRecord) -> TradeSnapshot:
         return TradeSnapshot(
             order_id=tr.order_id,
             transaction_hash=tr.transaction_hash,
@@ -47,9 +45,9 @@ class TradeService:
             matched_amount=tr.matched_amount,
             price=tr.price,
             fee_rate_bps=tr.fee_rate_bps,
-            request_source=req.request_source,
-            strategy_name=req.strategy_name,
-            rule_name=req.rule_name,
-            strategy_action=StrategyAction.model_dump(req.action),
+            request_source=tr.order_request.request_source if tr.order_request else None,
+            strategy_name=tr.order_request.strategy_name if tr.order_request else None,
+            rule_name=tr.order_request.rule_name if tr.order_request else None,
+            strategy_action=tr.order_request.action.model_dump() if tr.order_request else None,
             matched_ts=tr.matched_ts
         )

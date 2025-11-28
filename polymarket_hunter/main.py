@@ -6,8 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from polymarket_hunter.api.health_router import router as health_router
 from polymarket_hunter.api.market_router import router as slugs_router
 from polymarket_hunter.api.orders_router import router as orders_router
-from polymarket_hunter.api.trades_router import router as trades_router
-from polymarket_hunter.api.webhook_router import router as webhook_router
+from polymarket_hunter.api.user_router import router as user_router
 from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.service.scheduler_service import SchedulerService
 from polymarket_hunter.core.subscriber.context_subscriber import ContextSubscriber
@@ -76,9 +75,8 @@ def create_app() -> FastAPI:
     # Routers
     app.include_router(health_router)
     app.include_router(slugs_router)
-    app.include_router(webhook_router)
     app.include_router(orders_router)
-    app.include_router(trades_router)
+    app.include_router(user_router)
 
     return app
 

@@ -60,7 +60,7 @@ class OrderService:
         if is_success:
             tr = self._build_trade_record(req, res)
             await self._deactivate_opposite(tr)
-            await self._trade_store.add(req, tr)
+            await self._trade_store.add(tr)
 
         if is_success == (req.side == Side.SELL):
             await self._order_store.remove(req.market_id, req.asset_id, Side.BUY)
@@ -93,6 +93,7 @@ class OrderService:
             trader_side="TAKER" if req.order_type == OrderType.MARKET else None,
             status=status,
             active=True,
+            order_request=req,
             raw_events=[dict(res)],
             matched_ts=time.time()
         )

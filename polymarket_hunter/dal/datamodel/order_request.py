@@ -35,3 +35,6 @@ class OrderRequest(BaseModel):
     context: Optional[MarketContext] = None
     created_ts: float = Field(default_factory=time.time)
     updated_ts: float = Field(default_factory=time.time)
+
+    def touch(self) -> None:
+        self.updated_ts = time.time()

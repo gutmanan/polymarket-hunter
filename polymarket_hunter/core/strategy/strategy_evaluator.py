@@ -152,13 +152,13 @@ class StrategyEvaluator:
         stop: float = enter_request.action.stop_loss
         tp: float = enter_request.action.take_profit
         slippage: float = enter_request.action.slippage
+        current_price_float = float(current_price)
 
-        if entry_side == Side.BUY:
-            hit_stop = current_price <= entry_price - stop
-            hit_tp = current_price >= min(entry_price + tp, 0.99)
-        else:  # Side.SELL
-            hit_stop = current_price >= entry_price + stop
-            hit_tp = current_price <= max(entry_price - tp, 0.01)
+        sl_trigger_price = 0.50 if stop >= 1.0 else entry_price - stop
+        tp_trigger_price = min(entry_price + tp, 0.99)
+
+        hit_stop = current_price_float <= sl_trigger_price
+        hit_tp = current_price_float >= tp_trigger_price
 
         if not (hit_stop or hit_tp):
             return None
@@ -166,11 +166,10 @@ class StrategyEvaluator:
         request_source = RequestSource.STRATEGY_EXIT
 
         if hit_stop:
-            stop_price = entry_price - stop
-            acceptable_stop_price = stop_price - slippage
-            if float(current_price) < acceptable_stop_price:
+            acceptable_stop_price = sl_trigger_price - slippage
+            if current_price_float < acceptable_stop_price:
                 logger.warning(
-                    f"[SLIPPAGE BLOCK] SL triggered but current Bid {float(current_price):.3f} is below acceptable stop price {acceptable_stop_price:.3f} for {context.slug}."
+                    f"[SLIPPAGE BLOCK] SL triggered but current Bid {current_price_float:.3f} is below acceptable stop price {acceptable_stop_price:.3f} for {context.slug}."
                 )
                 return None
 

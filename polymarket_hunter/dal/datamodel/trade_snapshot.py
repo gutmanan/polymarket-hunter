@@ -22,9 +22,9 @@ class TradeSnapshot(SQLModel, table=True):
     matched_amount: Optional[float] = Field(default=0, description="Actual shares matched")
     price: float = Field(description="Actual price of the match/fill")
     fee_rate_bps: Optional[float] = 0
-    request_source: str = Field(description="SL, TP, STRATEGY_ENTER, etc.")
-    strategy_name: Optional[str] = Field(default=None)
-    rule_name: Optional[str] = Field(default=None)
-    strategy_action: Dict[str, Any] = Field(sa_column=Column(JSONB), description="Full StrategyAction used for entry/exit")
+    request_source: Optional[str] = Field(default=None, nullable=True, description="SL, TP, STRATEGY_ENTER, etc.")
+    strategy_name: Optional[str] = Field(default=None, nullable=True)
+    rule_name: Optional[str] = Field(default=None, nullable=True)
+    strategy_action: Optional[Dict[str, Any]] = Field(sa_column=Column(JSONB), description="Full StrategyAction used for entry/exit")
     matched_ts: Optional[float] = Field(index=True, default=0, description="Time of trade execution")
     created_ts: float = Field(default_factory=time.time)

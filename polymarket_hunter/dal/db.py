@@ -1,9 +1,10 @@
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 
 import redis.asyncio as redis
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.sql.base import Executable
 from sqlmodel import SQLModel
 
 from polymarket_hunter.config.settings import settings
@@ -48,3 +49,19 @@ async def write_object(obj: SQLModel) -> bool:
             return False
     else:
         return False
+
+
+async def get_object(statement: Executable) -> Optional[Any]:
+    async for session in get_postgres_session():
+        try:
+            result = await session.execute(statement)
+            obj = result.scalars().first()
+            if obj:
+                session.expunge(obj)
+                return obj
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error during execute: {e}")
+            return None
+    else:
+        return None

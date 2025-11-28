@@ -61,6 +61,16 @@ class RedisOrderRequestStore:
             return None
         return OrderRequest.model_validate_json(raw)
 
+    async def update(self, order: OrderRequest) -> None:
+        """Simple upsert without re-publishing add/update differentiation"""
+        skey = self._set_key(order.market_id, order.asset_id, order.side)
+        dkey = self._doc_key(order.market_id, order.asset_id, order.side)
+        order.touch()
+        raw = order.model_dump_json()
+
+        await self._redis.set(dkey, raw)
+        await self._publish({"action": "update", "key": skey, "order": raw})
+
     async def remove(self, market_id: str, asset_id: str, side: str) -> None:
         skey = self._set_key(market_id, asset_id, side)
         dkey = self._doc_key(market_id, asset_id, side)

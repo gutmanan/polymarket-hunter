@@ -27,42 +27,41 @@ class PriceChangeHandler(MessageHandler):
         market_id = msg["market"]
         market = ctx.markets.get(market_id)
         if market:
-            await self.update_prices(market, msg)
-            await self.update_trend(market, msg)
-            context = await self.build_context(market, msg)
-            await self._evaluator.evaluate(context)
+            async with self._lock:
+                self.update_prices(market, msg)
+                self.update_trend(market, msg)
+                context = self.build_context(market, msg)
+                await self._evaluator.evaluate(context)
 
     # ---------- pricing ----------
 
-    async def update_prices(self, market: dict[str, Any], msg: Dict[str, Any]) -> None:
+    def update_prices(self, market: dict[str, Any], msg: Dict[str, Any]) -> None:
         market_id = msg["market"]
         token_ids = json.loads(market["clobTokenIds"])
         outcomes = json.loads(market["outcomes"])
 
-        async with self._lock:
-            market_book = self._price_map.setdefault(market_id, {})
-            for pc in msg["price_changes"]:
-                asset_id = pc["asset_id"]
-                try:
-                    outcome = outcomes[token_ids.index(asset_id)]
-                except ValueError:
-                    continue
-                asset_book = market_book.setdefault(asset_id, {"outcome": outcome})
-                best_ask = pc.get("best_ask")
-                best_bid = pc.get("best_bid")
-                if best_ask is not None:
-                    asset_book[BUY] = q3(best_ask)
-                if best_bid is not None:
-                    asset_book[SELL] = q3(best_bid)
+        market_book = self._price_map.setdefault(market_id, {})
+        for pc in msg["price_changes"]:
+            asset_id = pc["asset_id"]
+            try:
+                outcome = outcomes[token_ids.index(asset_id)]
+            except ValueError:
+                continue
+            asset_book = market_book.setdefault(asset_id, {"outcome": outcome})
+            best_ask = pc.get("best_ask")
+            best_bid = pc.get("best_bid")
+            if best_ask is not None:
+                asset_book[BUY] = q3(best_ask)
+            if best_bid is not None:
+                asset_book[SELL] = q3(best_bid)
 
-    async def update_trend(self, market: dict[str, Any], msg: Dict[str, Any]) -> None:
+    def update_trend(self, market: dict[str, Any], msg: Dict[str, Any]) -> None:
         market_id = msg["market"]
         ts = ts_to_seconds(msg.get("timestamp"))
         tick_size = market.get("orderPriceMinTickSize")
 
-        async with self._lock:
-            market_book = self._price_map.get(market_id, {})
-            for asset_id, data in market_book.items():
+        market_book = self._price_map.get(market_id, {})
+        for asset_id, data in market_book.items():
                 ask, bid = map(lambda s: float(data.get(s, 0)), (BUY, SELL))
                 if not (ask >= bid > 0):
                     continue
@@ -88,7 +87,7 @@ class PriceChangeHandler(MessageHandler):
 
     # ---------- context lifecycle ----------
 
-    async def build_context(self, market: dict[str, Any], msg: Dict[str, Any]):
+    def build_context(self, market: dict[str, Any], msg: Dict[str, Any]):
         return MarketContext(
             condition_id=market["conditionId"],
             slug=market["slug"],
@@ -106,36 +105,33 @@ class PriceChangeHandler(MessageHandler):
             one_day_price_change=market.get("oneDayPriceChange", 0),
             outcomes=json.loads(market["outcomes"]),
             clob_token_ids=json.loads(market["clobTokenIds"]),
-            outcome_prices=await self.get_outcome_prices(market["conditionId"]),
-            outcome_assets=await self.get_outcome_assets(market["conditionId"]),
-            outcome_trends=await self.get_outcome_trends(market["conditionId"]),
+            outcome_prices=self.get_outcome_prices(market["conditionId"]),
+            outcome_assets=self.get_outcome_assets(market["conditionId"]),
+            outcome_trends=self.get_outcome_trends(market["conditionId"]),
             tags=set([t["label"] for t in market["tags"]]),
             event_ts=msg["timestamp"]
         )
 
-    async def get_outcome_prices(self, market_id: str) -> dict[str, dict[str, Any]]:
-        async with self._lock:
-            if market_id not in self._price_map:
-                return {}
-            return {
-                data["outcome"]: {
-                    BUY: data[BUY] if BUY in data.keys() else 0,
-                    SELL: data[SELL] if SELL in data.keys() else 0
-                } for asset_id, data in self._price_map[market_id].items()
-            }
+    def get_outcome_prices(self, market_id: str) -> dict[str, dict[str, Any]]:
+        if market_id not in self._price_map:
+            return {}
+        return {
+            data["outcome"]: {
+                BUY: data[BUY] if BUY in data.keys() else 0,
+                SELL: data[SELL] if SELL in data.keys() else 0
+            } for asset_id, data in self._price_map[market_id].items()
+        }
 
-    async def get_outcome_assets(self, market_id: str) -> dict[str, str]:
-        async with self._lock:
-            if market_id not in self._price_map:
-                return {}
-            return {
-                data["outcome"]: asset_id for asset_id, data in self._price_map[market_id].items()
-            }
+    def get_outcome_assets(self, market_id: str) -> dict[str, str]:
+        if market_id not in self._price_map:
+            return {}
+        return {
+            data["outcome"]: asset_id for asset_id, data in self._price_map[market_id].items()
+        }
 
-    async def get_outcome_trends(self, market_id: str) -> dict[str, Optional[TrendPrediction]]:
-        async with self._lock:
-            if market_id not in self._price_map:
-                return {}
-            return {
-                data["outcome"]: data.get("trend") for asset_id, data in self._price_map[market_id].items()
-            }
+    def get_outcome_trends(self, market_id: str) -> dict[str, Optional[TrendPrediction]]:
+        if market_id not in self._price_map:
+            return {}
+        return {
+            data["outcome"]: data.get("trend") for asset_id, data in self._price_map[market_id].items()
+        }
