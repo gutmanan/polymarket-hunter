@@ -5,24 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/api/datamodel/order_update_request.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/observability_ws_client.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/prometheus.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/trades_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/user_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/trade_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/trade_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/order_request.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/order_request.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_snapshot.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_snapshot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/user_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/user_router.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.in" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -96,7 +92,7 @@
     "git-widget-placeholder": "technical-analysis",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/sgutman/IdeaProjects/polymarket-hunter/polymarket_hunter/api/datamodel",
+    "last_opened_file_path": "/home/sgutman/Shared/google-cloud-aiplugin-1.11.0-243.zip",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -106,7 +102,7 @@
     "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
     "to.speed.mode.migration.done": "true",
     "vue.rearranger.settings.migration": "true"
   }
@@ -126,10 +122,10 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1685547" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18886718" />
       <window_info id="Commit" order="1" weight="0.16347656" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.18144532" />
-      <window_info id="VcsChanges" order="3" weight="0.3298828" />
+      <window_info id="VcsChanges" order="3" weight="0.15410157" />
       <window_info id="Bookmarks" order="4" side_tool="true" weight="0.18144532" />
       <window_info anchor="bottom" id="Database Changes" />
       <window_info anchor="bottom" id="TypeScript" />
@@ -141,7 +137,7 @@
       <window_info anchor="bottom" id="Version Control" order="2" weight="0.3475855" />
       <window_info anchor="bottom" id="Problems" order="3" />
       <window_info anchor="bottom" id="Problems View" order="4" weight="0.3475855" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="5" visible="true" weight="0.17052314" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="5" visible="true" weight="0.24396378" />
       <window_info anchor="bottom" id="Python Packages" order="6" weight="0.47233403" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.1" />
       <window_info anchor="bottom" id="Find" order="8" weight="0.3475855" />
@@ -150,16 +146,17 @@
       <window_info anchor="right" id="Endpoints" />
       <window_info anchor="right" id="SciView" />
       <window_info anchor="right" content_ui="combo" id="Notifications" order="0" weight="0.25" />
-      <window_info anchor="right" id="AIAssistant" order="1" weight="0.3298828" />
+      <window_info anchor="right" id="AIAssistant" order="1" weight="0.22871093" />
       <window_info anchor="right" id="Database" order="2" weight="0.25" />
       <window_info anchor="right" id="Gradle" order="3" weight="0.25" />
       <window_info anchor="right" id="Maven" order="4" weight="0.25" />
       <window_info anchor="right" id="Plots" order="5" weight="0.1" />
       <window_info anchor="right" id="MCP Servers" order="6" weight="0.3298828" />
       <window_info anchor="right" id="MCP Inspector" order="7" />
-      <window_info anchor="right" id="ElectroJunToolWindow" order="8" weight="0.3298828" />
+      <window_info anchor="right" id="ElectroJunToolWindow" order="8" weight="0.22871093" />
       <window_info anchor="right" id="Jupyter Variables" order="9" side_tool="true" weight="0.3298828" />
       <window_info active="true" anchor="right" id="Coverage" order="10" side_tool="true" weight="0.25683594" />
+      <window_info anchor="right" id="StudioBot" order="11" weight="0.22871093" />
     </layout>
   </component>
   <component name="RecentsManager">
@@ -368,7 +365,13 @@
       <workItem from="1763454681404" duration="66115000" />
       <workItem from="1763900428323" duration="342000" />
       <workItem from="1763901437937" duration="1196000" />
-      <workItem from="1763913801989" duration="34382000" />
+      <workItem from="1763913801989" duration="35945000" />
+      <workItem from="1764510639284" duration="1851000" />
+      <workItem from="1764574102555" duration="7037000" />
+      <workItem from="1764587447326" duration="123000" />
+      <workItem from="1764587735002" duration="238000" />
+      <workItem from="1764587977656" duration="1007000" />
+      <workItem from="1764589008575" duration="18357000" />
     </task>
     <servers />
   </component>

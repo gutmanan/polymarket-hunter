@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import time
 from typing import Any, List
 
 import websockets
@@ -16,6 +17,8 @@ from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager
 from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageContext
+from polymarket_hunter.core.subscriber.websocket.observability_ws_client import CLIENT_UPTIME_SECONDS, MESSAGE_COUNT, \
+    SLUG_RESOLUTION_LATENCY, WS_SETUP_LATENCY
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -46,6 +49,7 @@ class MarketWSClient:
         self._ws: WebSocketClientProtocol | None = None
 
         self._update_lock = asyncio.Lock()
+        CLIENT_UPTIME_SECONDS.set_to_current_time()
 
     # ---------- Public API ----------
 
@@ -83,6 +87,7 @@ class MarketWSClient:
 
     async def _run(self) -> None:
         backoff = 1.0
+        CLIENT_UPTIME_SECONDS.set_to_current_time()
         while not self._stop.is_set():
             try:
                 await self._connect_and_pump()
@@ -91,11 +96,13 @@ class MarketWSClient:
             except asyncio.CancelledError:
                 raise
             except Exception as e:
+                CLIENT_UPTIME_SECONDS.set(0)
                 logger.warning("WS client error: %s", e)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 10.0)
 
     async def _connect_and_pump(self) -> None:
+        start_time = time.monotonic()
         async with websockets.connect(
             settings.POLYMARKET_WS_URL + "/market",
             ping_interval=20,
@@ -105,6 +112,10 @@ class MarketWSClient:
             self._ws = ws
             await self._send_subscribe(ws)
 
+            setup_duration = time.monotonic() - start_time
+            WS_SETUP_LATENCY.observe(setup_duration)
+
+            logger.info("WS setup complete in %.3f seconds", setup_duration)
             while True:
                 recv_task = asyncio.create_task(ws.recv(), name="ws-recv")
                 stop_task = asyncio.create_task(self._stop.wait(), name="ws-stop")
@@ -145,6 +156,7 @@ class MarketWSClient:
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError:
+            MESSAGE_COUNT.labels('json_error').inc()
             logger.debug("Non-JSON message: %s", raw[:180])
             return
 
@@ -152,10 +164,12 @@ class MarketWSClient:
             for item in payload:
                 if isinstance(item, dict):
                     self._route_to_actor(item)
+                    MESSAGE_COUNT.labels(item.get("event_type", "unknown")).inc()
             return
 
         if isinstance(payload, dict):
             self._route_to_actor(payload)
+            MESSAGE_COUNT.labels(payload.get("event_type", "unknown")).inc()
 
     def _route_to_actor(self, item: dict) -> None:
         market, timestamp, event_type = item.get("market"), item.get("timestamp"), item.get("event_type")
@@ -170,11 +184,12 @@ class MarketWSClient:
 
     async def _slugs_to_markets(self, slugs: List[str]) -> List[dict[str, Any]]:
         markets: List[dict[str, Any]] = []
-        for slug in slugs:
-            try:
-                m = await self._gamma.get_market_by_slug(slug)
-                if m:
-                    markets.append(m)
-            except Exception as e:
-                logger.warning("Failed to resolve slug %s: %s", slug, e)
+        with SLUG_RESOLUTION_LATENCY.time():
+            for slug in slugs:
+                try:
+                    m = await self._gamma.get_market_by_slug(slug)
+                    if m:
+                        markets.append(m)
+                except Exception as e:
+                    logger.warning("Failed to resolve slug %s: %s", slug, e)
         return markets

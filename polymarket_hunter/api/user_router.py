@@ -1,5 +1,3 @@
-import json
-
 from fastapi import APIRouter
 
 from polymarket_hunter.core.client.data import get_data_client

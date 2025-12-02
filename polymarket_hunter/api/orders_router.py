@@ -1,4 +1,5 @@
 import json
+import time
 
 from fastapi import APIRouter
 from sqlmodel import select
@@ -8,7 +9,6 @@ from polymarket_hunter.api.datamodel.order_update_request import ApiOrderUpdateR
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest, RequestSource
 from polymarket_hunter.dal.datamodel.strategy_action import Side
-from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.datamodel.trade_snapshot import TradeSnapshot
 from polymarket_hunter.dal.db import get_object, write_object
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
@@ -81,3 +81,41 @@ async def update_order(payload: ApiOrderUpdateRequest):
         await write_object(db_snapshot)
 
     return {"status": "ok", "message": "Risk parameters updated successfully in Redis and Postgres."}
+
+
+@router.get("/close/{slug}/{outcome}")
+async def close_position(slug: str, outcome: str):
+    market_id, asset_id = await _derive_market_keys(slug, outcome)
+    existing_order = await order_store.get(market_id, asset_id, Side.BUY)
+    if not existing_order:
+        return {"error": "Active order not found"}, 404
+
+    statement = select(TradeSnapshot).where(True,
+                                            TradeSnapshot.market_id == market_id,
+                                            TradeSnapshot.asset_id == asset_id,
+                                            TradeSnapshot.side == Side.BUY
+                                            )
+    db_snapshot = await get_object(statement)
+    if not db_snapshot:
+        return {"error": "No trade snapshot found for this position"}, 404
+
+    new_snapshot = db_snapshot.model_copy(update={
+        "id": None,
+        "order_id": db_snapshot.order_id.replace("0x", "1x"),
+        "side": Side.SELL,
+        "created_ts": time.time(),
+        "updated_ts": time.time()
+    })
+    await write_object(new_snapshot)
+
+    return {"status": "ok", "message": "Position closed successfully in Redis and Postgres."}
+
+
+@router.get("/clean")
+async def clean():
+    res1 = await order_store.cleanup_stale_pointers()
+    res2 = await trade_store.cleanup_stale_pointers()
+    return {
+        "order_store": res1,
+        "trade_store": res2
+    }

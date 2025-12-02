@@ -1,7 +1,9 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from polymarket_hunter.api.health_router import router as health_router
 from polymarket_hunter.api.market_router import router as slugs_router
@@ -26,43 +28,42 @@ async def lifespan(app: FastAPI):
     await create_db_and_tables()
 
     market_subscriber = MarketSubscriber()
-    await market_subscriber.start()
-
     user_subscriber = UserSubscriber()
-    await user_subscriber.start()
-
     context_subscriber = ContextSubscriber()
-    await context_subscriber.start()
-
     orders_subscriber = OrdersSubscriber()
-    await orders_subscriber.start()
-
     trades_subscriber = TradesSubscriber()
-    await trades_subscriber.start()
-
     notification_subscriber = NotificationsSubscriber()
-    await notification_subscriber.start()
+
+    await asyncio.gather(
+        market_subscriber.start(),
+        user_subscriber.start(),
+        context_subscriber.start(),
+        orders_subscriber.start(),
+        trades_subscriber.start(),
+        notification_subscriber.start()
+    )
 
     scheduler = SchedulerService(market_subscriber)
     scheduler.start()
 
     try:
         yield
-    except Exception as e:
-        logger.exception(f"Exception occurred while starting the app: {e}")
-        scheduler.reload()
     finally:
-        await market_subscriber.stop()
-        await user_subscriber.stop()
-        await context_subscriber.stop()
-        await orders_subscriber.stop()
-        await trades_subscriber.stop()
-        await notification_subscriber.stop()
+        logger.info("Starting shutdown procedures...")
+        await asyncio.gather(
+            market_subscriber.stop(),
+            user_subscriber.stop(),
+            context_subscriber.stop(),
+            orders_subscriber.stop(),
+            trades_subscriber.stop(),
+            notification_subscriber.stop()
+        )
         scheduler.stop()
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION, lifespan=lifespan)
+    Instrumentator().instrument(app).expose(app)
 
     # CORS permissive for local use
     app.add_middleware(
