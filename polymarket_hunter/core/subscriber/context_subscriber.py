@@ -1,16 +1,16 @@
 import asyncio
 from typing import Optional
 
-from polymarket_hunter.core.service.trade_service import TradeService
-from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
+from polymarket_hunter.core.service.context_service import ContextService
+from polymarket_hunter.dal.market_context_store import RedisMarketContextStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-class TradesSubscriber:
+class ContextSubscriber:
     def __init__(self):
-        self._store = RedisTradeRecordStore()
-        self._service = TradeService()
+        self._store = RedisMarketContextStore()
+        self._service = ContextService()
         self._task: Optional[asyncio.Task] = None
 
     async def start(self):
@@ -34,6 +34,6 @@ class TradesSubscriber:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.warning("trades subscribe error: %s; retrying in %.1fs", e, backoff)
+                logger.warning("context subscribe error: %s; retrying in %.1fs", e, backoff)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 10.0)

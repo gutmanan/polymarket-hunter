@@ -6,6 +6,7 @@ from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.datamodel.strategy_action import OrderType, Side
+from polymarket_hunter.dal.datamodel.trade_error import TradeEvent, EventCode, EventState
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
@@ -25,7 +26,7 @@ class OrderService:
         self._trade_store = RedisTradeRecordStore()
         self._notifier = RedisNotificationStore()
 
-    async def execute_order(self, payload: dict[str, Any]):
+    async def serve(self, payload: dict[str, Any]):
         if payload["action"] != "add":
             return
 
@@ -35,20 +36,21 @@ class OrderService:
             logger.warning("Invalid OrderRequest payload: %s", e, exc_info=True)
             return
 
-        if req.action.order_type == OrderType.MARKET:
+        if req.order_type == OrderType.MARKET:
             res = self._clob.execute_market_order(
                 token_id=req.asset_id,
+                price=req.price,
                 size=req.size,
                 side=req.side,
-                tif=req.action.time_in_force
+                tif=req.tif
             )
-        elif req.action.order_type == OrderType.LIMIT:
+        elif req.order_type == OrderType.LIMIT:
             res = self._clob.execute_limit_order(
                 token_id=req.asset_id,
                 price=req.price,
                 size=req.size,
                 side=req.side,
-                tif=req.action.time_in_force
+                tif=req.tif
             )
         else:
             raise NotImplementedError
@@ -57,27 +59,38 @@ class OrderService:
         is_success = bool(res.get("success"))
 
         if is_success:
-            tr = await self._build_trade_record(req, res)
+            tr = self._build_trade_record(req, res)
+            await self._deactivate_opposite(tr)
             await self._trade_store.add(tr)
+        else:
+            error = res.get("error")
+            await TradeEvent.log(
+                ctx=req.context,
+                outcome=req.outcome,
+                side=req.side,
+                state=EventState.FAILED,
+                request_source=req.request_source,
+                strategy_name=req.strategy_name,
+                rule_name=req.rule_name,
+                code=EventCode.CLOB_API_ERROR,
+                error=error.get("error") if isinstance(error, dict) else str(error)
+            )
 
-        """
-        1. we remove the order from the order_store if it is a sell order and the order was successful. 
-        2. we also remove the order from the order_store if it is a buy order and the order was not successful.
-        * so we can try to sell again or buy again.
-        """
         if is_success == (req.side == Side.SELL):
             await self._order_store.remove(req.market_id, req.asset_id, Side.BUY)
         else:
             await self._order_store.remove(req.market_id, req.asset_id, Side.SELL)
 
-    async def _build_trade_record(self, req: OrderRequest, res: Dict[str, Any]) -> TradeRecord:
-        market_id =req.market_id
+    def _build_trade_record(self, req: OrderRequest, res: Dict[str, Any]) -> TradeRecord:
+        market_id = req.market_id
         asset_id = req.asset_id
         side = req.side
         order_id = res.get("orderID")
         status = (res.get("status") or "").upper() or "LIVE"
-        size_orig = float(res.get("makingAmount", 0)) if side == Side.BUY else float(res.get("takingAmount", 0))
-        size_mat = float(res.get("takingAmount", 0)) if side == Side.BUY else float(res.get("makingAmount", 0))
+        size_orig = float(res.get("makingAmount", 0) or 0) if side == Side.BUY else float(
+            res.get("takingAmount", 0) or 0)
+        size_mat = float(res.get("takingAmount", 0) or 0) if side == Side.BUY else float(
+            res.get("makingAmount", 0) or 0)
         price = size_orig / size_mat if size_mat > 0 else 0
 
         return TradeRecord(
@@ -85,15 +98,24 @@ class OrderService:
             asset_id=asset_id,
             side=side,
             order_id=order_id,
-            slug=req.context.slug,
+            slug=req.context.slug if req.context else '',
             outcome=req.outcome,
             matched_amount=size_mat,
             size=size_orig,
             price=price,
             transaction_hash=res.get("transactionsHashes")[0] if res.get("transactionsHashes") else None,
-            trader_side="TAKER" if req.action.order_type == OrderType.MARKET else None,
+            trader_side="TAKER" if req.order_type == OrderType.MARKET else None,
             status=status,
             active=True,
+            order_request=req,
             raw_events=[dict(res)],
             matched_ts=time.time()
         )
+
+    async def _deactivate_opposite(self, tr):
+        opposite_side = Side.BUY if tr.side == Side.SELL else Side.SELL
+        existing_opposite = await self._trade_store.get_active(tr.market_id, tr.asset_id, opposite_side)
+        if existing_opposite:
+            deactivate = existing_opposite.model_copy(update={"active": False})
+            deactivate.touch()
+            await self._trade_store.update(deactivate)

@@ -5,8 +5,8 @@ from typing import Optional, List, AsyncIterator
 
 import redis.asyncio as redis
 
-from polymarket_hunter.config.settings import settings
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
+from polymarket_hunter.dal.db import REDIS_CLIENT
 
 TRADE_RECORDS_KEY = "hunter:trade_records"
 DOC_PREFIX = "hunter:trade_records:doc:"
@@ -14,8 +14,8 @@ EVENTS_CHANNEL = "hunter:trade_records:events"
 
 
 class RedisTradeRecordStore:
-    def __init__(self, redis_url: Optional[str] = None):
-        self._redis = redis.from_url(redis_url or settings.REDIS_URL, decode_responses=True)
+    def __init__(self):
+        self._redis = REDIS_CLIENT
 
     @property
     def client(self) -> redis.Redis:
@@ -40,7 +40,7 @@ class RedisTradeRecordStore:
         except Exception:
             return 0
 
-    async def _iter_records(self, pattern: str, *, page_size: int = 1000) -> AsyncIterator["TradeRecord"]:
+    async def _iter_records(self, pattern: str, *, page_size: int = 1000) -> AsyncIterator[TradeRecord]:
         cursor: int | str = 0
         while True:
             cursor, members = await self._redis.sscan(TRADE_RECORDS_KEY, cursor=cursor, match=pattern, count=page_size)
@@ -88,17 +88,17 @@ class RedisTradeRecordStore:
             return None
         return TradeRecord.model_validate_json(raw)
 
-    async def get_active(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None) -> Optional["TradeRecord"]:
+    async def get_active(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None) -> Optional[TradeRecord]:
         pattern = self._build_pattern(market_id, asset_id, side)
         best: Optional[TradeRecord] = None
 
         async for rec in self._iter_records(pattern):
-            if rec.active:
+            if rec.active and (best is None or rec.matched_ts > best.matched_ts):
                 best = rec
 
         return best
 
-    async def get_all(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None, *, sort_desc: bool = True) -> List["TradeRecord"]:
+    async def get_all(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None, *, sort_desc: bool = True) -> List[TradeRecord]:
         pattern = self._build_pattern(market_id, asset_id, side)
         items = [rec async for rec in self._iter_records(pattern)]
         items.sort(key=lambda rec: rec.created_ts, reverse=sort_desc)
@@ -144,6 +144,42 @@ class RedisTradeRecordStore:
             except Exception:
                 continue
         return out
+
+    async def cleanup_stale_pointers(self) -> int:
+        skeys = await self._redis.smembers(TRADE_RECORDS_KEY)
+        if not skeys:
+            return 0
+
+        stale_keys_to_remove: List[str] = []
+        check_pipe = self._redis.pipeline(transaction=False)
+        dkeys_map = {}
+
+        for skey in skeys:
+            parts = skey.split(':')
+            if len(parts) != 4:
+                stale_keys_to_remove.append(skey)
+                continue
+
+            market_id, asset_id, side, order_id = parts
+            dkey = self._doc_key(market_id, asset_id, side, order_id)
+            check_pipe.exists(dkey)
+            dkeys_map[dkey] = skey
+
+        exists_results = await check_pipe.execute()
+
+        for dkey, exists_result in zip(dkeys_map.keys(), exists_results):
+            skey = dkeys_map[dkey]
+            if exists_result == 0:
+                stale_keys_to_remove.append(skey)
+
+        removed_count = 0
+        if stale_keys_to_remove:
+            remove_pipe = self._redis.pipeline(transaction=True)
+            remove_pipe.srem(TRADE_RECORDS_KEY, *stale_keys_to_remove)
+            results = await remove_pipe.execute()
+            removed_count = results[0]
+
+        return removed_count
 
     # ---------- Pub/Sub ----------
 

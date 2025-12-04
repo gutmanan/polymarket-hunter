@@ -3,16 +3,19 @@ from typing import Optional
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.strategy import Strategy, Rule
 from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
-from polymarket_hunter.utils.market import time_left_sec, late_threshold_sec
+from polymarket_hunter.utils.helper import time_left_sec, late_threshold_sec
 
 CRYPTO_SPREAD = 0.03  # per-outcome spread cap for safer fills
 NON_CRYPTO_SPREAD = 0.05
-MIN_LIQ = 500  # skip illiquid books
+MIN_LIQ = 10_000_000_000  # skip illiquid books
 
-INTERVAL_TAGS = {"1H", "4H"}
-CRYPTO_TAGS = {"Crypto", "Up or Down"}
+CRYPTO_TAGS = {"Crypto"}
 SPORT_TAGS = {"Sports"}
+FINANCE_TAGS = {"Finance"}
+PRICE_TAGS = {"Up or Down"}
+INTERVAL_TAGS = {"1H", "4H"}
 
+HIGH_RISK_TAGS = CRYPTO_TAGS | SPORT_TAGS | FINANCE_TAGS | PRICE_TAGS
 
 # ---------- tag helpers ----------
 
@@ -53,83 +56,39 @@ def spread(ctx: MarketContext, outcome: str):
 
 
 def ok_liquidity(ctx: MarketContext):
-    try:
-        return float(ctx.liquidity) >= MIN_LIQ
-    except Exception:
-        return False
+    return (ctx.liquidity >= MIN_LIQ) if ctx.liquidity else False
 
 
 strategies = [
     Strategy(
-        name="Late-Expiry Favorite Clamp (Crypto)",
+        name="High Probability (Non-Crypto)",
         condition_fn=lambda ctx: (
-                has_all(ctx, CRYPTO_TAGS) and has_any(ctx, INTERVAL_TAGS)
-                and ok_liquidity(ctx)
-        ),
-        rules=[
-            Rule(
-                name="Buy Favorite (Up)",
-                condition_fn=lambda ctx: (
-                        0.72 <= price(ctx, "Up", Side.BUY) <= 0.77
-                        and spread(ctx, "Up") <= CRYPTO_SPREAD
-                ),
-                action=StrategyAction(
-                    side=Side.BUY,
-                    size=10,
-                    outcome="Up",
-                    stop_loss=0.12,
-                    take_profit=0.03
-                ),
-            ),
-            Rule(
-                name="Buy Favorite (Down)",
-                condition_fn=lambda ctx: (
-                        0.72 <= price(ctx, "Down", Side.BUY) <= 0.77
-                        and spread(ctx, "Down") <= CRYPTO_SPREAD
-                ),
-                action=StrategyAction(
-                    side=Side.BUY,
-                    size=10,
-                    outcome="Down",
-                    stop_loss=0.12,
-                    take_profit=0.03
-                ),
-            ),
-        ],
-    ),
-    Strategy(
-        name="Late-Expiry Favorite Clamp (Non-Crypto)",
-        condition_fn=lambda ctx: (
-                not has_any(ctx, CRYPTO_TAGS) and not has_any(ctx, SPORT_TAGS)
-                and ok_liquidity(ctx)
+                ok_liquidity(ctx)
+                and not has_any(ctx, HIGH_RISK_TAGS)
         ),
         rules=[
             Rule(
                 name="Buy Favorite (Yes)",
                 condition_fn=lambda ctx: (
-                        0.75 <= price(ctx, "Yes", Side.BUY) <= 0.89
+                        0.7 <= price(ctx, "Yes", Side.BUY) <= 0.9
                         and spread(ctx, "Yes") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
-                    outcome="Yes",
-                    stop_loss=0.21,
-                    take_profit=0.07
+                    outcome="Yes"
                 ),
             ),
             Rule(
                 name="Buy Favorite (No)",
                 condition_fn=lambda ctx: (
-                        0.75 <= price(ctx, "No", Side.BUY) <= 0.89
+                        0.7 <= price(ctx, "No", Side.BUY) <= 0.9
                         and spread(ctx, "No") <= NON_CRYPTO_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
-                    outcome="No",
-                    stop_loss=0.21,
-                    take_profit=0.07
+                    outcome="No"
                 ),
             ),
         ],

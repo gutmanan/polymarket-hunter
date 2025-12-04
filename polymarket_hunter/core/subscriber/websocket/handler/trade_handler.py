@@ -5,12 +5,9 @@ from polymarket_hunter.core.subscriber.websocket.handler.handlers import Message
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
-from polymarket_hunter.utils.logger import setup_logger
 
-logger = setup_logger(__name__)
 
 class TradeHandler(MessageHandler):
-
     event_types = ["trade"]
 
     def __init__(self):
@@ -22,11 +19,12 @@ class TradeHandler(MessageHandler):
         return self._clob.get_order(order_id)
 
     async def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
+        ctx.logger.debug(f"Received trade: {msg}")
         if msg["status"] != "CONFIRMED":
             return
 
-        market = ctx.markets[msg["market"]]
-        logger.info(f"Received trade: {msg}")
+        market_id = msg["market"]
+        market = ctx.markets[market_id]
 
         if msg["trader_side"] == "TAKER":
             order = self._get_order_by_id(msg["taker_order_id"])

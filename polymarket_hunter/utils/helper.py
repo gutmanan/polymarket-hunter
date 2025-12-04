@@ -10,10 +10,16 @@ from tenacity import (retry, stop_after_attempt, wait_random_exponential, retry_
 
 from polymarket_hunter.constants import Q2, Q4, Q3
 from polymarket_hunter.dal.datamodel.market_context import MarketContext
-from polymarket_hunter.dal.datamodel.strategy_action import Side
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
+
+
+def to_map(objs: list[dict[str, Any]], key: str) -> Dict[str, Dict[str, Any]]:
+    return {obj[key]: obj for obj in objs}
+
+
+# ---------- async & retry -------------
 
 def _is_retryable_poly(e: BaseException) -> bool:
     if not isinstance(e, PolyApiException):
@@ -21,6 +27,7 @@ def _is_retryable_poly(e: BaseException) -> bool:
     code = getattr(e, "status_code", None)
     # retry on infra/rate-limit; fail fast on other 4xx
     return code is not None and (code >= 500 or code == 429)
+
 
 def retryable():  # common decorator config
     return retry(
@@ -31,17 +38,13 @@ def retryable():  # common decorator config
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
 
+
 async def with_timeout(coro, seconds: float = 10.0):
     async with asyncio.timeout(seconds):
         return await coro
 
-def market_has_ended(market: Dict[str, Any]):
-    return parse_iso_utc(
-        market.get("endDate") or
-        market.get("endDateIso") or
-        market.get("end_date") or
-        market.get("end_date_iso")
-    ) <= datetime.now(timezone.utc)
+
+# ---------- time -------------
 
 def parse_iso_utc(s: str | None) -> datetime | None:
     if not s:
@@ -51,52 +54,50 @@ def parse_iso_utc(s: str | None) -> datetime | None:
     except Exception:
         return None
 
-def _now_s() -> int:
+
+def utc_now_seconds() -> int:
     return int(datetime.now(timezone.utc).timestamp())
 
-def _to_epoch_s(dt: datetime) -> int:
+
+def dt_to_seconds(dt: datetime) -> int:
     return int(dt.timestamp())
 
+
+def ts_to_seconds(ts: float | int) -> float:
+    ts = float(ts)
+    return ts / 1000.0 if ts > 1e11 else ts
+
+
 def time_left_sec(ctx: MarketContext) -> int:
-    return _to_epoch_s(ctx.end_date) - _now_s()
+    return dt_to_seconds(ctx.end_date) - utc_now_seconds()
+
 
 def duration_sec(ctx: MarketContext) -> int:
-    return _to_epoch_s(ctx.end_date) - _to_epoch_s(ctx.start_date)
+    return dt_to_seconds(ctx.end_date) - dt_to_seconds(ctx.start_date)
+
 
 def late_threshold_sec(ctx: MarketContext, tfs: int) -> int:
     d = max(0, duration_sec(ctx))
     return d // tfs
 
+
 # ---------- price -------------
 
 def q2(x): return Decimal(str(x)).quantize(Q2, rounding=ROUND_DOWN)
 
+
 def q3(x): return Decimal(str(x)).quantize(Q3, rounding=ROUND_DOWN)
+
 
 def q4(x): return Decimal(str(x)).quantize(Q4, rounding=ROUND_DOWN)
 
-def prepare_market_amount(side: str, price: Decimal, size: float) -> float:
-    """
-    For BUY: desired is intended USDC budget.
-    For SELL: desired is intended share quantity.
-    Returns tuple: (amount_for_api_str, shares_str, usdc_str)
-    """
-    if side == Side.BUY:
-        shares = q4(size)
-        usdc_effective = q2(shares * price)
-        ensure_dp_strict(usdc_effective, 2)
-        return to_float(usdc_effective)
-    elif side == Side.SELL:
-        shares = q4(size)
-        ensure_dp_strict(shares, 4)
-        return to_float(shares)
-    else:
-        raise ValueError("side must be 'BUY' or 'SELL'")
 
-def to_float(d: Decimal) -> float:
-    return float(format(d, "f"))
+# ---------- market -------------
 
-def ensure_dp_strict(val: Decimal, max_dp: int):
-    s = format(val, "f")
-    if "." in s and len(s.split(".")[1]) > max_dp:
-        raise ValueError(f"too many decimals: {s} (> {max_dp})")
+def market_has_ended(market: Dict[str, Any]):
+    return parse_iso_utc(
+        market.get("endDate") or
+        market.get("endDateIso") or
+        market.get("end_date") or
+        market.get("end_date_iso")
+    ) <= datetime.now(timezone.utc)

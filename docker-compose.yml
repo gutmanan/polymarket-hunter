@@ -1,23 +1,9 @@
 services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-  redisinsight:
-    image: redis/redisinsight:latest
-    ports:
-      - "8001:5540"
-    volumes:
-      - redisinsight_data:/data
-    depends_on:
-      - redis
-    restart: unless-stopped
-
   app:
     build: .
     depends_on:
       - redis
+      - postgres
     env_file:
       - .env
     environment:
@@ -30,5 +16,85 @@ services:
       - ./logs:/app/logs
     command: ["python", "-m", "run"]
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "8001:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: hunter
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+      image: dpage/pgadmin4
+      restart: unless-stopped
+      ports:
+        - "5050:80"
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@hunter.com
+        PGADMIN_DEFAULT_PASSWORD: admin
+      depends_on:
+        - postgres
+      volumes:
+        - pgadmin_data:/var/lib/pgadmin
+
+  prometheus:
+      image: prom/prometheus:latest
+      container_name: prometheus
+      restart: unless-stopped
+      ports:
+        - "9090:9090"
+      volumes:
+        - ./prometheus.yml:/etc/prometheus/prometheus.yml
+        - prometheus_data:/prometheus
+      command:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+        - '--storage.tsdb.path=/prometheus'
+        - '--web.console.libraries=/etc/prometheus/console_libraries'
+        - '--web.console.templates=/etc/prometheus/consoles'
+      depends_on:
+        - app
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - redis
+      - postgres
+      - prometheus
+
 volumes:
+  redis_data:
   redisinsight_data:
+  postgres_data:
+  pgadmin_data:
+  prometheus_data:
+  grafana_data:

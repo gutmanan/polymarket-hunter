@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import json
+
 import redis.asyncio as redis
 
-from polymarket_hunter.dal.datamodel.notification import Notification
+from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.db import REDIS_CLIENT
 
-EVENTS_CHANNEL = "hunter:notifications:events"
+EVENTS_CHANNEL = "hunter:market_context:events"
 
 
-class RedisNotificationStore:
+class RedisMarketContextStore:
     def __init__(self):
         self._redis = REDIS_CLIENT
 
@@ -18,14 +20,14 @@ class RedisNotificationStore:
 
     # ---------- CRUD ----------
 
-    async def send_message(self, text: str):
-        notification = Notification(text=text)
-        await self._publish(notification)
+    async def publish(self, context: MarketContext) -> None:
+        raw = context.model_dump_json()
+        await self._publish({"action": "add", "context": raw})
 
     # ---------- Pub/Sub ----------
 
-    async def _publish(self, notification: Notification) -> None:
-        await self._redis.publish(EVENTS_CHANNEL, notification.model_dump_json())
+    async def _publish(self, message: dict) -> None:
+        await self._redis.publish(EVENTS_CHANNEL, json.dumps(message))
 
     async def subscribe_events(self):
         pubsub = self._redis.pubsub()
@@ -38,7 +40,7 @@ class RedisNotificationStore:
                 if isinstance(data, (bytes, bytearray)):
                     data = data.decode()
                 try:
-                    yield Notification.model_validate_json(data)
+                    yield json.loads(data)
                 except Exception:
                     continue
         finally:

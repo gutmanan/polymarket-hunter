@@ -5,8 +5,8 @@ from typing import Optional, List
 
 import redis.asyncio as redis
 
-from polymarket_hunter.config.settings import settings
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
+from polymarket_hunter.dal.db import REDIS_CLIENT
 
 ORDERS_KEY = "hunter:order_requests"
 DOC_PREFIX = "hunter:order_requests:doc:"
@@ -14,8 +14,8 @@ EVENTS_CHANNEL = "hunter:order_requests:events"
 
 
 class RedisOrderRequestStore:
-    def __init__(self, redis_url: Optional[str] = None):
-        self._redis = redis.from_url(redis_url or settings.REDIS_URL, decode_responses=True)
+    def __init__(self):
+        self._redis = REDIS_CLIENT
 
     @property
     def client(self) -> redis.Redis:
@@ -61,6 +61,16 @@ class RedisOrderRequestStore:
             return None
         return OrderRequest.model_validate_json(raw)
 
+    async def update(self, order: OrderRequest) -> None:
+        """Simple upsert without re-publishing add/update differentiation"""
+        skey = self._set_key(order.market_id, order.asset_id, order.side)
+        dkey = self._doc_key(order.market_id, order.asset_id, order.side)
+        order.touch()
+        raw = order.model_dump_json()
+
+        await self._redis.set(dkey, raw)
+        await self._publish({"action": "update", "key": skey, "order": raw})
+
     async def remove(self, market_id: str, asset_id: str, side: str) -> None:
         skey = self._set_key(market_id, asset_id, side)
         dkey = self._doc_key(market_id, asset_id, side)
@@ -94,6 +104,43 @@ class RedisOrderRequestStore:
                 # skip malformed entry
                 continue
         return out
+
+    async def cleanup_stale_pointers(self) -> int:
+        skeys = await self._redis.smembers(ORDERS_KEY)
+        if not skeys:
+            return 0
+
+        stale_keys_to_remove: List[str] = []
+        check_pipe = self._redis.pipeline(transaction=False)
+        dkeys_map = {}
+
+        for skey in skeys:
+            parts = skey.split(':')
+            if len(parts) != 3:
+                stale_keys_to_remove.append(skey)
+                continue
+
+            market_id, asset_id, side = parts
+            dkey = self._doc_key(market_id, asset_id, side)
+            check_pipe.exists(dkey)
+            dkeys_map[dkey] = skey
+
+        exists_results = await check_pipe.execute()
+
+        for dkey, exists_result in zip(dkeys_map.keys(), exists_results):
+            skey = dkeys_map[dkey]
+            if exists_result == 0:
+                stale_keys_to_remove.append(skey)
+
+        removed_count = 0
+        if stale_keys_to_remove:
+            remove_pipe = self._redis.pipeline(transaction=True)
+            remove_pipe.srem(ORDERS_KEY, *stale_keys_to_remove)
+
+            results = await remove_pipe.execute()
+            removed_count = results[0]
+
+        return removed_count
 
     # ---------- Pub/Sub ----------
 
