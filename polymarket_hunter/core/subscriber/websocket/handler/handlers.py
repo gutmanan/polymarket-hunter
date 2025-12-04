@@ -3,13 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Protocol, Any, Dict, List, Optional, Iterable
 
-from polymarket_hunter.core.client.clob import CLOBClient
-from polymarket_hunter.core.client.data import DataClient
-from polymarket_hunter.core.client.gamma import GammaClient
-
-
-def to_map(objs: list[dict[str, Any]], key: str) -> Dict[str, Dict[str, Any]]:
-    return {obj[key]: obj for obj in objs}
+from polymarket_hunter.utils.helper import to_map
 
 
 class MessageHandler(Protocol):
@@ -19,29 +13,20 @@ class MessageHandler(Protocol):
         return self.event_types is not None and msg["event_type"] in self.event_types
 
     async def handle(self, msg: Dict[str, Any], ctx: MessageContext) -> None:
-        """Do the work. Raise only for unexpected errors."""
         ...
 
+
 class MessageContext:
-    """
-    Shared context DI container for handlers.
-    Put things like logger, caches, clients, config, queues, etc.
-    """
-    def __init__(self, *, logger, markets: list[dict[str, Any]], gamma_client=None, clob_client=None, data_client=None):
+    def __init__(self, *, logger, markets: list[dict[str, Any]]):
         self.logger = logger
-
-        self.gamma_client: GammaClient = gamma_client
-        self.clob_client: CLOBClient = clob_client
-        self.data_client: DataClient = data_client
-
         self.markets = {}
         self.update_markets(markets)
 
     def update_markets(self, markets: list[dict[str, Any]]) -> None:
         self.markets = to_map(markets, key="conditionId")
 
-class MessageRouter:
 
+class MessageRouter:
     def __init__(self, market_id: str, handlers: List[MessageHandler], ctx: MessageContext, *, per_handler_timeout_ms: Optional[int] = None) -> None:
         self.market_id = market_id
         self.handlers = handlers
@@ -63,7 +48,7 @@ class MessageRouter:
             except asyncio.TimeoutError:
                 self.ctx.logger.warning("Handler %s timed out", h.__class__.__name__)
             except Exception as e:
-                self.ctx.logger.exception("Handler %s failed: %s", h.__class__.__name__, e)
+                self.ctx.logger.error("Handler %s failed: %s", h.__class__.__name__, e)
 
         if not matched:
             self.ctx.logger.debug("No handler matched event=%s", msg.get("event_type"))

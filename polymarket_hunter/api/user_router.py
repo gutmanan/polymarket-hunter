@@ -2,11 +2,11 @@ from fastapi import APIRouter
 
 from polymarket_hunter.core.client.data import get_data_client
 
-router = APIRouter()
+router = APIRouter(prefix="/user", tags=["User Management"])
 data = get_data_client()
 
 
-@router.get("/user_portfolio")
+@router.get("/portfolio")
 async def get_user_portfolio():
     usdc = await data.get_usdc_balance()
     portfolio = await data.get_portfolio_value()

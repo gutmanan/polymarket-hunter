@@ -7,6 +7,7 @@ from polymarket_hunter.dal.datamodel.market_context import MarketContext
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest, RequestSource
 from polymarket_hunter.dal.datamodel.strategy import Rule, Strategy
 from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side, OrderType
+from polymarket_hunter.dal.datamodel.trade_error import EventCode, TradeEvent, EventState
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.datamodel.trend_prediction import Direction
 from polymarket_hunter.dal.market_context_store import RedisMarketContextStore
@@ -44,41 +45,72 @@ class StrategyEvaluator:
                 continue
         return None
 
-    def _validate_request(self, context: MarketContext, outcome: str, request: OrderRequest) -> bool:
+    async def _validate_request(self, context: MarketContext, outcome: str, request: OrderRequest) -> bool:
         if request.request_source in (RequestSource.TAKE_PROFIT, RequestSource.STOP_LOSS):
-            logger.info(
-                "[VALIDATED] About to place %s order of %s (%s) shares for %s @ %.3f",
-                request.side, request.size, outcome, context.slug, request.price
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=request.side,
+                state=EventState.VALIDATED,
+                request_source=request.request_source,
+                strategy_name=request.strategy_name,
+                rule_name=request.rule_name
             )
             return True
 
         trend = context.outcome_trends.get(outcome)
         if not trend or trend.direction == Direction.FLAT:
-            logger.info(
-                "[TREND BLOCK] No trend data → blocking %s %s @ %.3f (%s)",
-                request.side, outcome, request.price, context.slug
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=request.side,
+                state=EventState.BLOCKED,
+                request_source=request.request_source,
+                strategy_name=request.strategy_name,
+                rule_name=request.rule_name,
+                code=EventCode.TREND_FLAT,
+                error="No trend detected"
             )
             return False
 
         now = ts_to_seconds(context.event_ts)
         if trend.reversal and (now - trend.flipped_ts) < REVERSAL_CONFIRMATION_PERIOD_SECONDS:
-            logger.info(
-                "[TREND BLOCK] Recent reversal — waiting confirm period %.1fs → blocking %s %s @ %.3f (%s) (reversed from %s %.2fs ago)",
-                REVERSAL_CONFIRMATION_PERIOD_SECONDS, request.side, outcome, request.price, context.slug, trend.flipped_from, now - trend.flipped_ts
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=request.side,
+                state=EventState.BLOCKED,
+                request_source=request.request_source,
+                strategy_name=request.strategy_name,
+                rule_name=request.rule_name,
+                code=EventCode.TREND_REVERSAL,
+                error="Recent reversal - waiting confirm period"
             )
             return False
 
         expected_side = Side.BUY if trend.direction == Direction.UP else Side.SELL
         if request.side != expected_side:
-            logger.info(
-                "[TREND BLOCK] Trend mismatch → blocking %s %s @ %.3f (%s). Trend=%s (t=%.2f, conf=%.2f), Expected=%s",
-                request.side, outcome, request.price, context.slug, trend.direction, trend.t_stat, trend.confidence, expected_side
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=request.side,
+                state=EventState.BLOCKED,
+                request_source=request.request_source,
+                strategy_name=request.strategy_name,
+                rule_name=request.rule_name,
+                code=EventCode.TREND_MISMATCH,
+                error=f"Trend mismatch - {request.side} is not allowed for trend direction {trend.direction}"
             )
             return False
 
-        logger.info(
-            "[VALIDATED] About to place %s order of %s (%s) shares for %s @ %.3f",
-            request.side, request.size, outcome, context.slug, request.price
+        await TradeEvent.log(
+            ctx=context,
+            outcome=outcome,
+            side=request.side,
+            state=EventState.VALIDATED,
+            request_source=request.request_source,
+            strategy_name=request.strategy_name,
+            rule_name=request.rule_name
         )
         return True
 
@@ -89,15 +121,27 @@ class StrategyEvaluator:
     # ---------- Public API --------------
 
     async def should_enter(self, context: MarketContext, outcome: str) -> Optional[OrderRequest]:
-        if time_left_sec(context) <= ENTER_LOCKOUT_PERIOD_SECONDS:
-            return None
-
         result = self._find_action_for_context(context, outcome)
         if result is None:
             return None
 
         strategy, rule = result
         action: StrategyAction = rule.action
+
+        if time_left_sec(context) <= ENTER_LOCKOUT_PERIOD_SECONDS:
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=Side.BUY,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_ENTER,
+                strategy_name=strategy.name,
+                rule_name=rule.name,
+                code=EventCode.LOCKOUT,
+                error="Lockout period"
+            )
+            return None
+
         market_id = context.condition_id
         asset_id = context.outcome_assets[outcome]
 
@@ -105,10 +149,32 @@ class StrategyEvaluator:
         outcome_prices = context.outcome_prices[outcome]
         current_price: Decimal = outcome_prices.get(side)
         if current_price is None or current_price == 0:
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=side,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_ENTER,
+                strategy_name=strategy.name,
+                rule_name=rule.name,
+                code=EventCode.MISSING_DATA_ERROR,
+                error="No price data available"
+            )
             return None
 
         active_position = await self._get_active_position(market_id, asset_id, side)
         if active_position:
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=side,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_ENTER,
+                strategy_name=strategy.name,
+                rule_name=rule.name,
+                code=EventCode.LOCKOUT,
+                error="Active position exists"
+            )
             return None
 
         # Build and return OrderRequest
@@ -130,6 +196,17 @@ class StrategyEvaluator:
 
     async def should_exit(self, context: MarketContext, outcome: str, enter_request: OrderRequest) -> Optional[OrderRequest]:
         if time_left_sec(context) <= EXIT_LOCKOUT_PERIOD_SECONDS:
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=Side.SELL,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_EXIT,
+                strategy_name=enter_request.strategy_name,
+                rule_name=enter_request.rule_name,
+                code=EventCode.LOCKOUT,
+                error="Lockout period"
+            )
             return None
 
         market_id = enter_request.market_id
@@ -137,6 +214,17 @@ class StrategyEvaluator:
 
         active_position = await self._get_active_position(market_id, asset_id, enter_request.side)
         if not active_position:
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=Side.SELL,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_EXIT,
+                strategy_name=enter_request.strategy_name,
+                rule_name=enter_request.rule_name,
+                code=EventCode.LOCKOUT,
+                error="No active position"
+            )
             return None
 
         entry_price: float = enter_request.price
@@ -147,11 +235,21 @@ class StrategyEvaluator:
         current_price: Decimal = outcome_prices.get(exit_side)
 
         if current_price is None or current_price == 0:
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=exit_side,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_EXIT,
+                strategy_name=enter_request.strategy_name,
+                rule_name=enter_request.rule_name,
+                code=EventCode.MISSING_DATA_ERROR,
+                error="No price data available"
+            )
             return None
 
         stop: float = enter_request.action.stop_loss
         tp: float = enter_request.action.take_profit
-        slippage: float = enter_request.action.slippage
         current_price_float = float(current_price)
 
         sl_trigger_price = 0.50 if stop >= 1.0 else entry_price - stop
@@ -161,18 +259,23 @@ class StrategyEvaluator:
         hit_tp = current_price_float >= tp_trigger_price
 
         if not (hit_stop or hit_tp):
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=Side.SELL,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_EXIT,
+                strategy_name=enter_request.strategy_name,
+                rule_name=enter_request.rule_name,
+                code=EventCode.NO_EXIT,
+                error="No exit criteria met",
+                additional_info={"sl_trigger_price": sl_trigger_price, "tp_trigger_price": tp_trigger_price}
+            )
             return None
 
         request_source = RequestSource.STRATEGY_EXIT
 
         if hit_stop:
-            acceptable_stop_price = sl_trigger_price - slippage
-            if current_price_float < acceptable_stop_price:
-                logger.warning(
-                    f"[SLIPPAGE BLOCK] SL triggered but current Bid {current_price_float:.3f} is below acceptable stop price {acceptable_stop_price:.3f} for {context.slug}."
-                )
-                return None
-
             request_source = RequestSource.STOP_LOSS
             message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=True)
             await self._notifier.send_message(message)
@@ -216,5 +319,5 @@ class StrategyEvaluator:
             else:
                 continue
 
-            if request and self._validate_request(context, outcome, request):
+            if request and await self._validate_request(context, outcome, request):
                 await self._order_store.add(request)

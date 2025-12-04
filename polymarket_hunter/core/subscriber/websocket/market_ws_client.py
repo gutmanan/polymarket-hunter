@@ -14,7 +14,7 @@ from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
-from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager
+from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager, ActorType
 from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageContext
 from polymarket_hunter.core.subscriber.websocket.observability_ws_client import CLIENT_UPTIME_SECONDS, MESSAGE_COUNT, \
@@ -35,13 +35,10 @@ class MarketWSClient:
         self.markets = []
         self.ctx = MessageContext(
             logger=logger,
-            markets=self.markets,
-            gamma_client=self._gamma,
-            clob_client=self._clob,
-            data_client=self._data,
+            markets=self.markets
         )
 
-        self._actors = ActorManager(self.ctx, "market")
+        self._actors = ActorManager(self.ctx, ActorType.MARKET)
 
         self._task: asyncio.Task | None = None
         self._stop = asyncio.Event()

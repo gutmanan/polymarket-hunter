@@ -7,13 +7,15 @@ from polymarket_hunter.utils.helper import time_left_sec, late_threshold_sec
 
 CRYPTO_SPREAD = 0.03  # per-outcome spread cap for safer fills
 NON_CRYPTO_SPREAD = 0.05
-MIN_LIQ = 5_000  # skip illiquid books
+MIN_LIQ = 10_000_000_000  # skip illiquid books
 
-INTERVAL_TAGS = {"1H", "4H"}
-CRYPTO_TAGS = {"Crypto", "Up or Down"}
+CRYPTO_TAGS = {"Crypto"}
 SPORT_TAGS = {"Sports"}
 FINANCE_TAGS = {"Finance"}
+PRICE_TAGS = {"Up or Down"}
+INTERVAL_TAGS = {"1H", "4H"}
 
+HIGH_RISK_TAGS = CRYPTO_TAGS | SPORT_TAGS | FINANCE_TAGS | PRICE_TAGS
 
 # ---------- tag helpers ----------
 
@@ -54,20 +56,15 @@ def spread(ctx: MarketContext, outcome: str):
 
 
 def ok_liquidity(ctx: MarketContext):
-    try:
-        return float(ctx.liquidity) >= MIN_LIQ
-    except Exception:
-        return False
+    return (ctx.liquidity >= MIN_LIQ) if ctx.liquidity else False
 
 
 strategies = [
     Strategy(
         name="High Probability (Non-Crypto)",
         condition_fn=lambda ctx: (
-                not has_any(ctx, CRYPTO_TAGS)
-                and not has_any(ctx, SPORT_TAGS)
-                and not has_any(ctx, FINANCE_TAGS)
-                and ok_liquidity(ctx)
+                ok_liquidity(ctx)
+                and not has_any(ctx, HIGH_RISK_TAGS)
         ),
         rules=[
             Rule(

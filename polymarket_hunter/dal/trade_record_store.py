@@ -40,7 +40,7 @@ class RedisTradeRecordStore:
         except Exception:
             return 0
 
-    async def _iter_records(self, pattern: str, *, page_size: int = 1000) -> AsyncIterator["TradeRecord"]:
+    async def _iter_records(self, pattern: str, *, page_size: int = 1000) -> AsyncIterator[TradeRecord]:
         cursor: int | str = 0
         while True:
             cursor, members = await self._redis.sscan(TRADE_RECORDS_KEY, cursor=cursor, match=pattern, count=page_size)
@@ -88,17 +88,17 @@ class RedisTradeRecordStore:
             return None
         return TradeRecord.model_validate_json(raw)
 
-    async def get_active(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None) -> Optional["TradeRecord"]:
+    async def get_active(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None) -> Optional[TradeRecord]:
         pattern = self._build_pattern(market_id, asset_id, side)
         best: Optional[TradeRecord] = None
 
         async for rec in self._iter_records(pattern):
-            if rec.active:
+            if rec.active and (best is None or rec.matched_ts > best.matched_ts):
                 best = rec
 
         return best
 
-    async def get_all(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None, *, sort_desc: bool = True) -> List["TradeRecord"]:
+    async def get_all(self, market_id: str, asset_id: Optional[str] = None, side: Optional[str] = None, *, sort_desc: bool = True) -> List[TradeRecord]:
         pattern = self._build_pattern(market_id, asset_id, side)
         items = [rec async for rec in self._iter_records(pattern)]
         items.sort(key=lambda rec: rec.created_ts, reverse=sort_desc)

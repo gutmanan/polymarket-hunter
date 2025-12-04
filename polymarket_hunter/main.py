@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from polymarket_hunter.api.health_router import router as health_router
-from polymarket_hunter.api.market_router import router as slugs_router
+from polymarket_hunter.api.market_router import router as market_router
 from polymarket_hunter.api.orders_router import router as orders_router
 from polymarket_hunter.api.user_router import router as user_router
 from polymarket_hunter.config.settings import settings
@@ -75,7 +75,7 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(health_router)
-    app.include_router(slugs_router)
+    app.include_router(market_router)
     app.include_router(orders_router)
     app.include_router(user_router)
 

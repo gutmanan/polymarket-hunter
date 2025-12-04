@@ -1,4 +1,3 @@
-# polymarket_hunter/core/ws_client.py
 from __future__ import annotations
 
 import asyncio
@@ -13,7 +12,7 @@ from polymarket_hunter.config.settings import settings
 from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
-from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager
+from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager, ActorType
 from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageContext
 from polymarket_hunter.utils.logger import setup_logger
@@ -32,13 +31,10 @@ class UserWSClient:
         self.markets = []
         self.ctx = MessageContext(
             logger=logger,
-            markets=self.markets,
-            gamma_client=self._gamma,
-            clob_client=self._clob,
-            data_client=self._data,
+            markets=self.markets
         )
 
-        self._actors = ActorManager(self.ctx, "user")
+        self._actors = ActorManager(self.ctx, ActorType.USER)
 
         self._task: asyncio.Task | None = None
         self._stop = asyncio.Event()

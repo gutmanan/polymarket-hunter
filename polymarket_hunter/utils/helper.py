@@ -15,6 +15,10 @@ from polymarket_hunter.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
+def to_map(objs: list[dict[str, Any]], key: str) -> Dict[str, Dict[str, Any]]:
+    return {obj[key]: obj for obj in objs}
+
+
 # ---------- async & retry -------------
 
 def _is_retryable_poly(e: BaseException) -> bool:

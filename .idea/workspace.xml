@@ -5,20 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/observability_ws_client.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/prometheus.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_error.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/market_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/market_router.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/user_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/user_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/webhook_router.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/actor_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/actor_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/handlers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/user_ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/user_ws_client.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.in" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/utils/helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/utils/helper.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,50 +65,50 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Docker.docker-compose.yml: Compose Deployment.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.__init__.executor": "Run",
-    "Python.clob.executor": "Run",
-    "Python.daily_markets_task.executor": "Run",
-    "Python.data.executor": "Run",
-    "Python.gamma.executor": "Run",
-    "Python.housekeeping.executor": "Run",
-    "Python.main (1).executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.report_notifier_task (1).executor": "Run",
-    "Python.report_notifier_task.executor": "Run",
-    "Python.report_service.executor": "Run",
-    "Python.resolution_service.executor": "Run",
-    "Python.run.executor": "Run",
-    "Python.telegram_notifier.executor": "Run",
-    "Python.trade_service.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "technical-analysis",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/sgutman/Shared/google-cloud-aiplugin-1.11.0-243.zip",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.__init__.executor&quot;: &quot;Run&quot;,
+    &quot;Python.clob.executor&quot;: &quot;Run&quot;,
+    &quot;Python.daily_markets_task.executor&quot;: &quot;Run&quot;,
+    &quot;Python.data.executor&quot;: &quot;Run&quot;,
+    &quot;Python.gamma.executor&quot;: &quot;Run&quot;,
+    &quot;Python.housekeeping.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.report_notifier_task (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.report_notifier_task.executor&quot;: &quot;Run&quot;,
+    &quot;Python.report_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python.resolution_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run.executor&quot;: &quot;Run&quot;,
+    &quot;Python.telegram_notifier.executor&quot;: &quot;Run&quot;,
+    &quot;Python.trade_service.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;technical-analysis&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/sgutman/Shared/google-cloud-aiplugin-1.11.0-243.zip&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
       <console-settings module-name="polymarket-hunter" is-module-sdk="true">
@@ -122,25 +124,25 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18886718" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19160156" />
       <window_info id="Commit" order="1" weight="0.16347656" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.18144532" />
-      <window_info id="VcsChanges" order="3" weight="0.15410157" />
+      <window_info id="VcsChanges" order="3" weight="0.18886718" />
       <window_info id="Bookmarks" order="4" side_tool="true" weight="0.18144532" />
       <window_info anchor="bottom" id="Database Changes" />
       <window_info anchor="bottom" id="TypeScript" />
       <window_info anchor="bottom" id="TODO" />
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="HfCacheToolWindow" />
-      <window_info anchor="bottom" id="Services" order="0" weight="0.3475855" />
-      <window_info anchor="bottom" id="Run" order="1" weight="0.2660966" />
+      <window_info anchor="bottom" id="Services" order="0" weight="0.44718307" />
+      <window_info active="true" anchor="bottom" id="Run" order="1" visible="true" weight="0.32545274" />
       <window_info anchor="bottom" id="Version Control" order="2" weight="0.3475855" />
       <window_info anchor="bottom" id="Problems" order="3" />
       <window_info anchor="bottom" id="Problems View" order="4" weight="0.3475855" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="5" visible="true" weight="0.24396378" />
+      <window_info anchor="bottom" id="Terminal" order="5" weight="0.44718307" />
       <window_info anchor="bottom" id="Python Packages" order="6" weight="0.47233403" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.1" />
-      <window_info anchor="bottom" id="Find" order="8" weight="0.3475855" />
+      <window_info anchor="bottom" id="Find" order="8" weight="0.34771574" />
       <window_info anchor="bottom" id="Debug" order="9" weight="0.34356135" />
       <window_info anchor="right" id="PR AI Assistant" />
       <window_info anchor="right" id="Endpoints" />
@@ -153,10 +155,10 @@
       <window_info anchor="right" id="Plots" order="5" weight="0.1" />
       <window_info anchor="right" id="MCP Servers" order="6" weight="0.3298828" />
       <window_info anchor="right" id="MCP Inspector" order="7" />
-      <window_info anchor="right" id="ElectroJunToolWindow" order="8" weight="0.22871093" />
+      <window_info anchor="right" id="ElectroJunToolWindow" order="8" weight="0.3298828" />
       <window_info anchor="right" id="Jupyter Variables" order="9" side_tool="true" weight="0.3298828" />
       <window_info active="true" anchor="right" id="Coverage" order="10" side_tool="true" weight="0.25683594" />
-      <window_info anchor="right" id="StudioBot" order="11" weight="0.22871093" />
+      <window_info anchor="right" id="StudioBot" order="11" weight="0.3298828" />
     </layout>
   </component>
   <component name="RecentsManager">
@@ -168,14 +170,14 @@
       <recent name="$PROJECT_DIR$/polymarket_hunter/api" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/polymarket_hunter/core/datamodel" />
+      <recent name="$PROJECT_DIR$/polymarket_hunter/dal/datamodel" />
       <recent name="$PROJECT_DIR$/polymarket_hunter/dal" />
       <recent name="$PROJECT_DIR$/polymarket_hunter/core/service" />
       <recent name="$PROJECT_DIR$/polymarket_hunter/core/scheduler" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/core" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/dal/datamodel" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.gamma">
+  <component name="RunManager" selected="Python.clob">
     <configuration name="__init__" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="polymarket-hunter" />
       <option name="ENV_FILES" value="" />
@@ -306,10 +308,10 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.gamma" />
-        <item itemvalue="Python.resolution_service" />
-        <item itemvalue="Python.data" />
         <item itemvalue="Python.clob" />
+        <item itemvalue="Python.gamma" />
+        <item itemvalue="Python.data" />
+        <item itemvalue="Python.resolution_service" />
         <item itemvalue="Python.__init__" />
       </list>
     </recent_temporary>
@@ -371,7 +373,11 @@
       <workItem from="1764587447326" duration="123000" />
       <workItem from="1764587735002" duration="238000" />
       <workItem from="1764587977656" duration="1007000" />
-      <workItem from="1764589008575" duration="18357000" />
+      <workItem from="1764589008575" duration="26085000" />
+      <workItem from="1764676816707" duration="22801000" />
+      <workItem from="1764766540174" duration="3590000" />
+      <workItem from="1764774217156" duration="16000" />
+      <workItem from="1764774423489" duration="11468000" />
     </task>
     <servers />
   </component>
@@ -402,11 +408,11 @@
     <SUITE FILE_PATH="coverage/polymarket_hunter$resolution_service.coverage" NAME="resolution_service Coverage Results" MODIFIED="1763406370907" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$__init__.coverage" NAME="__init__ Coverage Results" MODIFIED="1762360236479" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$housekeeping.coverage" NAME="housekeeping Coverage Results" MODIFIED="1761389503165" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$clob.coverage" NAME="clob Coverage Results" MODIFIED="1762433371865" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$data.coverage" NAME="data Coverage Results" MODIFIED="1762702986511" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
+    <SUITE FILE_PATH="coverage/polymarket_hunter$clob.coverage" NAME="clob Coverage Results" MODIFIED="1764708786506" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
+    <SUITE FILE_PATH="coverage/polymarket_hunter$data.coverage" NAME="data Coverage Results" MODIFIED="1764707047451" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$telegram_notifier.coverage" NAME="telegram_notifier Coverage Results" MODIFIED="1761514455237" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/notifier" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1761129080303" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$gamma.coverage" NAME="gamma Coverage Results" MODIFIED="1763562682780" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
+    <SUITE FILE_PATH="coverage/polymarket_hunter$gamma.coverage" NAME="gamma Coverage Results" MODIFIED="1764707466410" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$report_service.coverage" NAME="report_service Coverage Results" MODIFIED="1762292441097" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
     <SUITE FILE_PATH="coverage/polymarket_hunter$report_notifier_task.coverage" NAME="report_notifier_task Coverage Results" MODIFIED="1762292460362" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/scheduler" />
   </component>

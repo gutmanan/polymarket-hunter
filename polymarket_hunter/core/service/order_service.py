@@ -6,6 +6,7 @@ from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.datamodel.strategy_action import OrderType, Side
+from polymarket_hunter.dal.datamodel.trade_error import TradeEvent, EventCode, EventState
 from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
@@ -61,6 +62,19 @@ class OrderService:
             tr = self._build_trade_record(req, res)
             await self._deactivate_opposite(tr)
             await self._trade_store.add(tr)
+        else:
+            error = res.get("error")
+            await TradeEvent.log(
+                ctx=req.context,
+                outcome=req.outcome,
+                side=req.side,
+                state=EventState.FAILED,
+                request_source=req.request_source,
+                strategy_name=req.strategy_name,
+                rule_name=req.rule_name,
+                code=EventCode.CLOB_API_ERROR,
+                error=error.get("error") if isinstance(error, dict) else str(error)
+            )
 
         if is_success == (req.side == Side.SELL):
             await self._order_store.remove(req.market_id, req.asset_id, Side.BUY)

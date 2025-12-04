@@ -8,7 +8,7 @@ from polymarket_hunter.api.datamodel.order_request import ApiOrderRequest
 from polymarket_hunter.api.datamodel.order_update_request import ApiOrderUpdateRequest
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest, RequestSource
-from polymarket_hunter.dal.datamodel.strategy_action import Side
+from polymarket_hunter.dal.datamodel.strategy_action import Side, StrategyAction
 from polymarket_hunter.dal.datamodel.trade_snapshot import TradeSnapshot
 from polymarket_hunter.dal.db import get_object, write_object
 from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
@@ -16,9 +16,12 @@ from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
-router = APIRouter()
+
+router = APIRouter(prefix="/order", tags=["User Orders"])
+
 order_store = RedisOrderRequestStore()
 trade_store = RedisTradeRecordStore()
+
 gamma = get_gamma_client()
 
 
@@ -31,13 +34,13 @@ async def _derive_market_keys(slug: str, outcome: str):
     return market_id, token_id
 
 
-@router.get("/order/{slug}/{outcome}/{side}")
+@router.get("/{slug}/{outcome}/{side}")
 async def get_order(slug: str, outcome: str, side: str):
     market_id, token_id = await _derive_market_keys(slug, outcome)
     return await order_store.get(market_id, token_id, side)
 
 
-@router.put("/order")
+@router.put("")
 async def place_order(payload: ApiOrderRequest):
     market_id, token_id = await _derive_market_keys(payload.slug, payload.outcome)
     return await order_store.add(OrderRequest(
@@ -49,11 +52,18 @@ async def place_order(payload: ApiOrderRequest):
         side=payload.side,
         tif=payload.tif,
         order_type=payload.order_type,
-        request_source=RequestSource.API_CALL
+        request_source=RequestSource.API_CALL,
+        action=StrategyAction(
+            side=Side.BUY,
+            size=payload.size,
+            outcome=payload.outcome
+        ),
+        strategy_name="Manual",
+        rule_name="Manual"
     ))
 
 
-@router.post("/order", status_code=200)
+@router.post("")
 async def update_order(payload: ApiOrderUpdateRequest):
     market_id, asset_id = await _derive_market_keys(payload.slug, payload.outcome)
     existing_order = await order_store.get(market_id, asset_id, Side.BUY)
@@ -83,7 +93,7 @@ async def update_order(payload: ApiOrderUpdateRequest):
     return {"status": "ok", "message": "Risk parameters updated successfully in Redis and Postgres."}
 
 
-@router.get("/close/{slug}/{outcome}")
+@router.post("/close/{slug}/{outcome}")
 async def close_position(slug: str, outcome: str):
     market_id, asset_id = await _derive_market_keys(slug, outcome)
     existing_order = await order_store.get(market_id, asset_id, Side.BUY)
@@ -109,13 +119,3 @@ async def close_position(slug: str, outcome: str):
     await write_object(new_snapshot)
 
     return {"status": "ok", "message": "Position closed successfully in Redis and Postgres."}
-
-
-@router.get("/clean")
-async def clean():
-    res1 = await order_store.cleanup_stale_pointers()
-    res2 = await trade_store.cleanup_stale_pointers()
-    return {
-        "order_store": res1,
-        "trade_store": res2
-    }
