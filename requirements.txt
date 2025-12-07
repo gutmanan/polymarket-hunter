@@ -126,6 +126,10 @@ aiohttp==3.13.1 \
     --hash=sha256:feb5ee664300e2435e0d1bc3443a98925013dfaf2cae9699c1f3606b88544898 \
     --hash=sha256:ff0357fa3dd28cf49ad8c515452a1d1d7ad611b513e0a4f6fa6ad6780abaddfd
     # via web3
+aiolimiter==1.2.1 \
+    --hash=sha256:d3f249e9059a20badcb56b61601a83556133655c11d1eb3dd3e04ff069e5f3c7 \
+    --hash=sha256:e02a37ea1a855d9e832252a105420ad4d15011505512a1a1d814647451b5cca9
+    # via polymarket-hunter (pyproject.toml)
 aiosignal==1.4.0 \
     --hash=sha256:053243f8b92b990551949e63930a839ff0cf0b0ebbe0597b0f3fb19e1a0fe82e \
     --hash=sha256:f47eecd9468083c2029cc99945502cb7708b082c232f9aca65da147157b251c7
@@ -138,12 +142,17 @@ anyio==4.11.0 \
     --hash=sha256:0287e96f4d26d4149305414d4e3bc32f0dcd0862365a4bddea19d7a1ec38c4fc \
     --hash=sha256:82a8d0b81e318cc5ce71a5f1f8b5c4e63619620b63141ef8c995fa0db95a57c4
     # via
+    #   google-genai
     #   httpx
     #   starlette
     #   watchfiles
 apscheduler==3.11.0 \
     --hash=sha256:4c622d250b0955a65d5d0eb91c33e6d43fd879834bf541e0a18661ae60460133 \
     --hash=sha256:fc134ca32e50f5eadcc4938e3a4545ab19131435e851abb40b34d63d5141c6da
+    # via polymarket-hunter (pyproject.toml)
+async-lru==2.0.5 \
+    --hash=sha256:481d52ccdd27275f42c43a928b4a50c3bfb2d67af4e78b170e3e0bb39c66e5bb \
+    --hash=sha256:ab95404d8d2605310d345932697371a5f40def0487c03d6d0ad9138de52c9943
     # via polymarket-hunter (pyproject.toml)
 asyncpg==0.30.0 \
     --hash=sha256:04ff0785ae7eed6cc138e73fc67b8e51d54ee7a3ce9b63666ce55a0bf095f7ba \
@@ -293,6 +302,10 @@ bitarray==3.7.2 \
     --hash=sha256:fff2fcda05db3cb9cf6ee560d5b27527f324eaf562ebe67f5beb1ce45ca6c598 \
     --hash=sha256:fffd2387aee2df25da51ae232e038febc6537a34e25d986aa8d4a1b43547d994
     # via eth-account
+cachetools==6.2.2 \
+    --hash=sha256:6c09c98183bf58560c97b2abfcedcbaf6a896a490f534b031b661d3723b45ace \
+    --hash=sha256:8e6d266b25e539df852251cfd6f990b4bc3a141db73b939058d809ebd2590fc6
+    # via google-auth
 certifi==2025.10.5 \
     --hash=sha256:0f212c2744a9bb6de0c56639a6f68afe01ecd92d91f14ae897c4fe7bbeeef0de \
     --hash=sha256:47c09d31ccf2acf0be3f701ea53595ee7e0b8fa08801c6624be771df09ae7b43
@@ -1041,6 +1054,14 @@ gevent==25.9.1 \
     --hash=sha256:f2b54ea3ca6f0c763281cd3f96010ac7e98c2e267feb1221b5a26e2ca0b9a692 \
     --hash=sha256:fe1599d0b30e6093eb3213551751b24feeb43db79f07e89d98dd2f3330c9063e
     # via polymarket-hunter (pyproject.toml)
+google-auth==2.43.0 \
+    --hash=sha256:88228eee5fc21b62a1b5fe773ca15e67778cb07dc8363adcb4a8827b52d81483 \
+    --hash=sha256:af628ba6fa493f75c7e9dbe9373d148ca9f4399b5ea29976519e0a3848eddd16
+    # via google-genai
+google-genai==1.53.0 \
+    --hash=sha256:65a3f99e5c03c372d872cda7419f5940e723374bb12a2f3ffd5e3e56e8eb2094 \
+    --hash=sha256:938a26d22f3fd32c6eeeb4276ef204ef82884e63af9842ce3eac05ceb39cbd8d
+    # via polymarket-hunter (pyproject.toml)
 greenlet==3.2.4 \
     --hash=sha256:00fadb3fedccc447f517ee0d3fd8fe49eae949e1cd0f6a611818f4f6fb7dc83b \
     --hash=sha256:061dc4cf2c34852b052a8620d40f36324554bc192be474b9e9770e8c042fd735 \
@@ -1167,6 +1188,7 @@ httpx==0.28.1 \
     --hash=sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad
     # via
     #   polymarket-hunter (pyproject.toml)
+    #   google-genai
     #   python-telegram-bot
 idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
@@ -1924,6 +1946,16 @@ py-order-utils==0.3.2 \
     --hash=sha256:4c0ecb939f4ce0313cd8a4ca32f2ba9a72449a6fc9ee17b9ce1937f594662988 \
     --hash=sha256:5ab780e61ed532ddda852a6a12d470be7bbdaae01213ced3ebc6c887cedb1d3e
     # via py-clob-client
+pyasn1==0.6.1 \
+    --hash=sha256:0d632f46f2ba09143da3a8afe9e33fb6f92fa2320ab7e886e2d0f7672af84629 \
+    --hash=sha256:6f580d2bdd84365380830acf45550f2511469f673cb4a5ae3857a3170128b034
+    # via
+    #   pyasn1-modules
+    #   rsa
+pyasn1-modules==0.4.2 \
+    --hash=sha256:29253a9207ce32b64c3ac6600edc75368f98473906e8fd1043bd6b5b1de2c14a \
+    --hash=sha256:677091de870a80aae844b1ca6134f54652fa2c8c5a52aa396440ac3106e941e6
+    # via google-auth
 pycryptodome==3.23.0 \
     --hash=sha256:0011f7f00cdb74879142011f95133274741778abba114ceca229adbf8e62c3e4 \
     --hash=sha256:11eeeb6917903876f134b56ba11abe95c0b0fd5e3330def218083c7d98bbcb3c \
@@ -1978,6 +2010,7 @@ pydantic==2.12.0 \
     #   eth-account
     #   eth-utils
     #   fastapi
+    #   google-genai
     #   pydantic-settings
     #   sqlmodel
     #   web3
@@ -2346,6 +2379,8 @@ requests==2.32.5 \
     --hash=sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf
     # via
     #   polymarket-hunter (pyproject.toml)
+    #   google-auth
+    #   google-genai
     #   py-builder-signing-sdk
     #   py-clob-client
     #   web3
@@ -2355,6 +2390,10 @@ rlp==4.1.0 \
     # via
     #   eth-account
     #   eth-rlp
+rsa==4.9.1 \
+    --hash=sha256:68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762 \
+    --hash=sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75
+    # via google-auth
 scipy==1.16.3 \
     --hash=sha256:0151a0749efeaaab78711c78422d413c583b8cdd2011a3c1d6c794938ee9fdb2 \
     --hash=sha256:01e87659402762f43bd2fee13370553a17ada367d42e7487800bf2916535aecb \
@@ -2504,7 +2543,9 @@ starlette==0.38.6 \
 tenacity==9.1.2 \
     --hash=sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb \
     --hash=sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138
-    # via polymarket-hunter (pyproject.toml)
+    # via
+    #   polymarket-hunter (pyproject.toml)
+    #   google-genai
 toolz==1.1.0 \
     --hash=sha256:15ccc861ac51c53696de0a5d6d4607f99c210739caf987b5d2054f3efed429d8 \
     --hash=sha256:27a5c770d068c110d9ed9323f24f1543e83b2f300a687b7891c1a6d56b697b5b
@@ -2525,6 +2566,7 @@ typing-extensions==4.15.0 \
     #   anyio
     #   eth-typing
     #   fastapi
+    #   google-genai
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
@@ -2796,6 +2838,7 @@ websockets==15.0.1 \
     --hash=sha256:fcd5cf9e305d7b8338754470cf69cf81f420459dbae8a3b40cee57417f4614a7
     # via
     #   polymarket-hunter (pyproject.toml)
+    #   google-genai
     #   uvicorn
     #   web3
 yarl==1.22.0 \

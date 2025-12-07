@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-from typing import Any, List
+from typing import List
 
 import websockets
 from websockets.legacy.client import WebSocketClientProtocol
@@ -15,6 +15,7 @@ from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager, ActorType
 from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageContext
+from polymarket_hunter.core.subscriber.websocket.market_resolver import MarketResolver
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -26,6 +27,7 @@ class UserWSClient:
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
+        self._market_resolver = MarketResolver()
         self._market_ids = []
 
         self.markets = []
@@ -42,6 +44,8 @@ class UserWSClient:
         self._ws: WebSocketClientProtocol | None = None
 
         self._update_lock = asyncio.Lock()
+        self._gamma_semaphore = asyncio.Semaphore(10)
+
 
     # ---------- Public API ----------
 
@@ -65,7 +69,7 @@ class UserWSClient:
         Update the tracked slugs -> resolve to markets -> trigger resubscribe.
         """
         async with self._update_lock:
-            self.markets = await self._slugs_to_markets(slugs)
+            self.markets = await self._market_resolver.resolve(slugs)
             if not self.markets:
                 return
             self._market_ids = [m["conditionId"] for m in self.markets]
@@ -165,14 +169,3 @@ class UserWSClient:
             with contextlib.suppress(Exception):
                 await self._ws.close()
         self._ws = None
-
-    async def _slugs_to_markets(self, slugs: List[str]) -> List[dict[str, Any]]:
-        markets: List[dict[str, Any]] = []
-        for slug in slugs:
-            try:
-                m = await self._gamma.get_market_by_slug(slug)
-                if m:
-                    markets.append(m)
-            except Exception as e:
-                logger.warning("Failed to resolve slug %s: %s", slug, e)
-        return markets

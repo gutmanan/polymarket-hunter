@@ -1,18 +1,16 @@
 import json
-import os
 from functools import lru_cache
 from typing import Any, Dict, Optional, AsyncGenerator
 
 import httpx
-from dotenv import load_dotenv
 
-load_dotenv()
+from polymarket_hunter.config.settings import settings
 
 
 class GammaClient:
 
     def __init__(self, timeout: float = 15.0):
-        self.gamma_url = os.environ.get("GAMMA_HOST", "https://api.gamma.markets")
+        self.gamma_url = settings.GAMMA_HOST
         self.markets_endpoint = f"{self.gamma_url}/markets"
         self.events_endpoint = f"{self.gamma_url}/events"
         self._client = httpx.AsyncClient(timeout=timeout)

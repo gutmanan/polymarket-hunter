@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: Optional[str] = Field(default=None, env="TELEGRAM_BOT_TOKEN")
     TELEGRAM_CHAT_ID: Optional[str] = Field(default=None, env="TELEGRAM_CHAT_ID")
 
+    # Gemini
+    GEMINI_API_KEY: Optional[str] = Field(default=None, env="GEMINI_API_KEY")
+
     class Config:
         env_file = ".env"
         case_sensitive = True

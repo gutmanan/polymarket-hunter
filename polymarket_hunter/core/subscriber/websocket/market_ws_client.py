@@ -4,8 +4,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-import time
-from typing import Any, List
+from typing import List
 
 import websockets
 from websockets.legacy.client import WebSocketClientProtocol
@@ -17,8 +16,8 @@ from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import ActorManager, ActorType
 from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageContext
-from polymarket_hunter.core.subscriber.websocket.observability_ws_client import CLIENT_UPTIME_SECONDS, MESSAGE_COUNT, \
-    SLUG_RESOLUTION_LATENCY, WS_SETUP_LATENCY
+from polymarket_hunter.core.subscriber.websocket.market_resolver import MarketResolver
+from polymarket_hunter.core.subscriber.websocket.observability_ws_client import CLIENT_UPTIME_SECONDS, MESSAGE_COUNT
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -30,6 +29,7 @@ class MarketWSClient:
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
+        self._market_resolver = MarketResolver()
         self._assets_ids = []
 
         self.markets = []
@@ -46,6 +46,7 @@ class MarketWSClient:
         self._ws: WebSocketClientProtocol | None = None
 
         self._update_lock = asyncio.Lock()
+        self._gamma_semaphore = asyncio.Semaphore(10)
         CLIENT_UPTIME_SECONDS.set_to_current_time()
 
     # ---------- Public API ----------
@@ -70,7 +71,7 @@ class MarketWSClient:
         Update the tracked slugs -> resolve to markets -> trigger resubscribe.
         """
         async with self._update_lock:
-            self.markets = await self._slugs_to_markets(slugs)
+            self.markets = await self._market_resolver.resolve(slugs)
             if not self.markets:
                 return
             self._assets_ids = [a for m in self.markets for a in json.loads(m.get("clobTokenIds") or [])]
@@ -99,7 +100,6 @@ class MarketWSClient:
                 backoff = min(backoff * 2, 10.0)
 
     async def _connect_and_pump(self) -> None:
-        start_time = time.monotonic()
         async with websockets.connect(
             settings.POLYMARKET_WS_URL + "/market",
             ping_interval=20,
@@ -109,10 +109,6 @@ class MarketWSClient:
             self._ws = ws
             await self._send_subscribe(ws)
 
-            setup_duration = time.monotonic() - start_time
-            WS_SETUP_LATENCY.observe(setup_duration)
-
-            logger.info("WS setup complete in %.3f seconds", setup_duration)
             while True:
                 recv_task = asyncio.create_task(ws.recv(), name="ws-recv")
                 stop_task = asyncio.create_task(self._stop.wait(), name="ws-stop")
@@ -178,15 +174,3 @@ class MarketWSClient:
             with contextlib.suppress(Exception):
                 await self._ws.close()
         self._ws = None
-
-    async def _slugs_to_markets(self, slugs: List[str]) -> List[dict[str, Any]]:
-        markets: List[dict[str, Any]] = []
-        with SLUG_RESOLUTION_LATENCY.time():
-            for slug in slugs:
-                try:
-                    m = await self._gamma.get_market_by_slug(slug)
-                    if m:
-                        markets.append(m)
-                except Exception as e:
-                    logger.warning("Failed to resolve slug %s: %s", slug, e)
-        return markets

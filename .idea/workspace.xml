@@ -4,23 +4,72 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_error.py" afterDir="false" />
+    <list default="true" id="cb89ac06-2395-4346-8ee8-2543a7fe63c7" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/analyze_markets_task.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/genai_service.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_resolver.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/market_analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/polymarket-hunter.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/polymarket-hunter.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/datamodel/order_request.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/datamodel/order_request.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/datamodel/order_update_request.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/datamodel/order_update_request.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/market_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/market_router.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/user_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/user_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/webhook_router.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/settings.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/data.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/client/gamma.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/client/gamma.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/exit_message_formatter.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/exit_message_formatter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/place_order_formatter.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/place_order_formatter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/trend_reversal_formatter.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/trend_reversal_formatter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/notifier/telegram_notifier.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/notifier/telegram_notifier.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/tasks.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/context_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/context_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/report_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/report_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/scheduler_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/scheduler_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/trade_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/trade_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/tend_detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/tend_detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/context_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/context_subscriber.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/market_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/market_subscriber.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/notification_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/notification_subscriber.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/order_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/order_subscriber.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/trade_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/trade_subscriber.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/user_subscriber.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/user_subscriber.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/actor_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/actor_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/market_actor.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/actor/market_actor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/book_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/book_handler.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/handlers.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/handlers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/order_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/order_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/price_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/trade_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/handler/trade_handler.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/user_ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/user_ws_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/market_context.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/market_context.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/market_snapshot.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/market_snapshot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/notification.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/notification.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/order_request.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/order_request.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/strategy.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/strategy.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/strategy_action.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/strategy_action.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_error.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_error.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_record.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_snapshot.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_snapshot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trend_prediction.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trend_prediction.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/db.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/market_context_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/market_context_store.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/notification_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/notification_store.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/slug_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/slug_store.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/utils/helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/utils/helper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/polymarket_hunter/utils/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/utils/logger.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,88 +84,37 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_BRANCH_BY_REPOSITORY">
-      <map>
-        <entry key="$PROJECT_DIR$" value="main" />
-      </map>
-    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-  <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
-    &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;gutmanan&quot;
-  }
-}</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;git@github.com:gutmanan/polymarket-hunter.git&quot;,
-    &quot;accountId&quot;: &quot;579957dd-cc36-4926-954c-6bb60ca1a941&quot;
-  }
-}</component>
-  <component name="MacroExpansionManager">
-    <option name="directoryName" value="B6OjWY3k" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
-  <component name="ProjectId" id="33y2rwkwvWbys7DEYF9byXnU11l" />
+  <component name="ProjectId" id="36NlLLesfmHD8ztrtpNifcb7OXR" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
-    &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.__init__.executor&quot;: &quot;Run&quot;,
-    &quot;Python.clob.executor&quot;: &quot;Run&quot;,
-    &quot;Python.daily_markets_task.executor&quot;: &quot;Run&quot;,
-    &quot;Python.data.executor&quot;: &quot;Run&quot;,
-    &quot;Python.gamma.executor&quot;: &quot;Run&quot;,
-    &quot;Python.housekeeping.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main (1).executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.report_notifier_task (1).executor&quot;: &quot;Run&quot;,
-    &quot;Python.report_notifier_task.executor&quot;: &quot;Run&quot;,
-    &quot;Python.report_service.executor&quot;: &quot;Run&quot;,
-    &quot;Python.resolution_service.executor&quot;: &quot;Run&quot;,
-    &quot;Python.run.executor&quot;: &quot;Run&quot;,
-    &quot;Python.telegram_notifier.executor&quot;: &quot;Run&quot;,
-    &quot;Python.trade_service.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.pytest in genai_service.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.genai_service.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1&quot;: &quot;true&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;technical-analysis&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/sgutman/Shared/google-cloud-aiplugin-1.11.0-243.zip&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/sgutman/IdeaProjects/polymarket-hunter/polymarket_hunter/core/scheduler&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.stylelint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.stylelint&quot;: &quot;&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="PyConsoleOptionsProvider">
-    <option name="myPythonConsoleState">
-      <console-settings module-name="polymarket-hunter" is-module-sdk="true">
-        <option name="myUseModuleSdk" value="true" />
-        <option name="myModuleName" value="polymarket-hunter" />
-      </console-settings>
-    </option>
-  </component>
   <component name="RdControllerToolWindowsLayoutState" isNewUi="true">
     <layout>
       <window_info id="Merge Requests" />
@@ -124,7 +122,7 @@
       <window_info id="Commit_Guest" show_stripe_button="false" />
       <window_info id="Pull Requests" />
       <window_info id="Learn" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19160156" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21972656" />
       <window_info id="Commit" order="1" weight="0.16347656" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.18144532" />
       <window_info id="VcsChanges" order="3" weight="0.18886718" />
@@ -134,18 +132,19 @@
       <window_info anchor="bottom" id="TODO" />
       <window_info anchor="bottom" id="File Transfer" />
       <window_info anchor="bottom" id="HfCacheToolWindow" />
-      <window_info anchor="bottom" id="Services" order="0" weight="0.44718307" />
-      <window_info active="true" anchor="bottom" id="Run" order="1" visible="true" weight="0.32545274" />
+      <window_info active="true" anchor="bottom" id="Services" order="0" visible="true" weight="0.2573604" />
+      <window_info anchor="bottom" id="Run" order="1" weight="0.49796954" />
       <window_info anchor="bottom" id="Version Control" order="2" weight="0.3475855" />
       <window_info anchor="bottom" id="Problems" order="3" />
       <window_info anchor="bottom" id="Problems View" order="4" weight="0.3475855" />
-      <window_info anchor="bottom" id="Terminal" order="5" weight="0.44718307" />
+      <window_info anchor="bottom" id="Terminal" order="5" weight="0.49796954" />
       <window_info anchor="bottom" id="Python Packages" order="6" weight="0.47233403" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.1" />
       <window_info anchor="bottom" id="Find" order="8" weight="0.34771574" />
       <window_info anchor="bottom" id="Debug" order="9" weight="0.34356135" />
       <window_info anchor="right" id="PR AI Assistant" />
       <window_info anchor="right" id="Endpoints" />
+      <window_info anchor="right" id="documentation.v2" side_tool="true" />
       <window_info anchor="right" id="SciView" />
       <window_info anchor="right" content_ui="combo" id="Notifications" order="0" weight="0.25" />
       <window_info anchor="right" id="AIAssistant" order="1" weight="0.22871093" />
@@ -163,23 +162,14 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/polymarket_hunter/api/datamodel" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/core/service" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/core/subscriber" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/dal" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/api" />
-    </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/polymarket_hunter/core/datamodel" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/dal/datamodel" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/dal" />
-      <recent name="$PROJECT_DIR$/polymarket_hunter/core/service" />
       <recent name="$PROJECT_DIR$/polymarket_hunter/core/scheduler" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket" />
+    </key>
   </component>
-  <component name="RunManager" selected="Python.clob">
-    <configuration name="__init__" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="polymarket-hunter" />
+  <component name="RunManager" selected="Python.genai_service">
+    <configuration default="true" type="DjangoTestsConfigurationType">
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -187,12 +177,34 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/polymarket_hunter/core/client" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/polymarket_hunter/core/client/__init__.py" />
+      <option name="TARGET" value="" />
+      <option name="SETTINGS_FILE" value="" />
+      <option name="CUSTOM_SETTINGS" value="false" />
+      <option name="USE_OPTIONS" value="false" />
+      <option name="OPTIONS" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -201,76 +213,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="clob" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="polymarket-hunter" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/polymarket_hunter/core/client" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/polymarket_hunter/core/client/clob.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="data" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="polymarket-hunter" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/polymarket_hunter/core/client" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/polymarket_hunter/core/client/data.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="gamma" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="polymarket-hunter" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/polymarket_hunter/core/client" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/polymarket_hunter/core/client/gamma.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="resolution_service" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="genai_service" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="polymarket-hunter" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -284,7 +227,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/polymarket_hunter/core/service/genai_service.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -293,26 +236,108 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration default="true" type="docker-deploy" factoryName="docker-compose.yml" temporary="true">
-      <deployment type="docker-compose.yml">
-        <settings />
-      </deployment>
+    <configuration default="true" type="Python.FlaskServer">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="launchJavascriptDebuger" value="false" />
       <method v="2" />
     </configuration>
-    <list>
-      <item itemvalue="Python.data" />
-      <item itemvalue="Python.resolution_service" />
-      <item itemvalue="Python.__init__" />
-      <item itemvalue="Python.gamma" />
-      <item itemvalue="Python.clob" />
-    </list>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docs" factoryName="Docutils task">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <option name="docutils_input_file" value="" />
+      <option name="docutils_output_file" value="" />
+      <option name="docutils_params" value="" />
+      <option name="docutils_task" value="" />
+      <option name="docutils_open_in_browser" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="docs" factoryName="Sphinx task">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <option name="docutils_input_file" value="" />
+      <option name="docutils_output_file" value="" />
+      <option name="docutils_params" value="" />
+      <option name="docutils_task" value="" />
+      <option name="docutils_open_in_browser" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest in genai_service.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="polymarket-hunter" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/polymarket_hunter/core/service" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/polymarket_hunter/core/service/genai_service.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.clob" />
-        <item itemvalue="Python.gamma" />
-        <item itemvalue="Python.data" />
-        <item itemvalue="Python.resolution_service" />
-        <item itemvalue="Python.__init__" />
+        <item itemvalue="Python.genai_service" />
+        <item itemvalue="Python tests.pytest in genai_service.py" />
       </list>
     </recent_temporary>
   </component>
@@ -326,94 +351,21 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="2c6e1d26-6052-4d40-a778-8b7e416386af" name="Changes" comment="" />
-      <created>1760275194018</created>
+      <changelist id="cb89ac06-2395-4346-8ee8-2543a7fe63c7" name="Changes" comment="" />
+      <created>1764854853698</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1760275194018</updated>
-      <workItem from="1760275195094" duration="88000" />
-      <workItem from="1760275302808" duration="38000" />
-      <workItem from="1760275379920" duration="728000" />
-      <workItem from="1760276126774" duration="117000" />
-      <workItem from="1760276255480" duration="90000" />
-      <workItem from="1760276349745" duration="39000" />
-      <workItem from="1760276399356" duration="59000" />
-      <workItem from="1760276462396" duration="154000" />
-      <workItem from="1760276618367" duration="3454000" />
-      <workItem from="1760341713851" duration="8309000" />
-      <workItem from="1760426077327" duration="16000" />
-      <workItem from="1760426547692" duration="7143000" />
-      <workItem from="1760880806850" duration="19604000" />
-      <workItem from="1761029743120" duration="254000" />
-      <workItem from="1761115308325" duration="226000" />
-      <workItem from="1761115575378" duration="26324000" />
-      <workItem from="1761156064198" duration="69549000" />
-      <workItem from="1761396680126" duration="19349000" />
-      <workItem from="1761428568368" duration="9923000" />
-      <workItem from="1761473192572" duration="20014000" />
-      <workItem from="1761513008937" duration="12012000" />
-      <workItem from="1761931821601" duration="109521000" />
-      <workItem from="1762254038503" duration="35343000" />
-      <workItem from="1762338999716" duration="56466000" />
-      <workItem from="1762522520796" duration="3725000" />
-      <workItem from="1762625777965" duration="7807000" />
-      <workItem from="1762717779189" duration="448000" />
-      <workItem from="1762718393649" duration="28642000" />
-      <workItem from="1762842157190" duration="5000" />
-      <workItem from="1763305612402" duration="6551000" />
-      <workItem from="1763313663857" duration="145000" />
-      <workItem from="1763313963375" duration="8745000" />
-      <workItem from="1763365926051" duration="14783000" />
-      <workItem from="1763454681404" duration="66115000" />
-      <workItem from="1763900428323" duration="342000" />
-      <workItem from="1763901437937" duration="1196000" />
-      <workItem from="1763913801989" duration="35945000" />
-      <workItem from="1764510639284" duration="1851000" />
-      <workItem from="1764574102555" duration="7037000" />
-      <workItem from="1764587447326" duration="123000" />
-      <workItem from="1764587735002" duration="238000" />
-      <workItem from="1764587977656" duration="1007000" />
-      <workItem from="1764589008575" duration="26085000" />
-      <workItem from="1764676816707" duration="22801000" />
-      <workItem from="1764766540174" duration="3590000" />
-      <workItem from="1764774217156" duration="16000" />
-      <workItem from="1764774423489" duration="11468000" />
+      <updated>1764854853698</updated>
+      <workItem from="1764854854903" duration="43532000" />
+      <workItem from="1765108758154" duration="2689000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
-          </value>
-        </entry>
-      </map>
-    </option>
-  </component>
-  <component name="XSLT-Support.FileAssociations.UIState">
-    <expand />
-    <select />
-  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/polymarket_hunter$main.coverage" NAME="main Coverage Results" MODIFIED="1761206120910" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$trade_service.coverage" NAME="trade_service Coverage Results" MODIFIED="1762285131439" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$report_notifier_task__1_.coverage" NAME="report_notifier_task (1) Coverage Results" MODIFIED="1761919793170" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/scheduler" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$daily_markets_task.coverage" NAME="daily_markets_task Coverage Results" MODIFIED="1762077696688" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/scheduler" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$run.coverage" NAME="run Coverage Results" MODIFIED="1761129165761" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$resolution_service.coverage" NAME="resolution_service Coverage Results" MODIFIED="1763406370907" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$__init__.coverage" NAME="__init__ Coverage Results" MODIFIED="1762360236479" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$housekeeping.coverage" NAME="housekeeping Coverage Results" MODIFIED="1761389503165" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$clob.coverage" NAME="clob Coverage Results" MODIFIED="1764708786506" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$data.coverage" NAME="data Coverage Results" MODIFIED="1764707047451" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$telegram_notifier.coverage" NAME="telegram_notifier Coverage Results" MODIFIED="1761514455237" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/notifier" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$main__1_.coverage" NAME="main (1) Coverage Results" MODIFIED="1761129080303" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$gamma.coverage" NAME="gamma Coverage Results" MODIFIED="1764707466410" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/client" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$report_service.coverage" NAME="report_service Coverage Results" MODIFIED="1762292441097" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
-    <SUITE FILE_PATH="coverage/polymarket_hunter$report_notifier_task.coverage" NAME="report_notifier_task Coverage Results" MODIFIED="1762292460362" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/scheduler" />
+    <SUITE FILE_PATH="coverage/polymarket_hunter$pytest_in_genai_service_py.coverage" NAME="pytest in genai_service.py Coverage Results" MODIFIED="1764865784478" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
+    <SUITE FILE_PATH="coverage/polymarket_hunter$genai_service.coverage" NAME="genai_service Coverage Results" MODIFIED="1765027905839" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/polymarket_hunter/core/service" />
   </component>
 </project>

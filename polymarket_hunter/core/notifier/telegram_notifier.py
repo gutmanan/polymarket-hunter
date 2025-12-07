@@ -1,21 +1,19 @@
 import asyncio
-import os
 
-from dotenv import load_dotenv
 from telegram import Bot
 from telegram.constants import ParseMode
 
+from polymarket_hunter.config.settings import settings
 from polymarket_hunter.dal.datamodel.notification import Notification
 from polymarket_hunter.utils.logger import setup_logger
 
-load_dotenv()
 logger = setup_logger(__name__)
 
 class TelegramNotifier:
 
     def __init__(self):
-        self.telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-        self.telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+        self.telegram_bot_token = settings.TELEGRAM_BOT_TOKEN
+        self.telegram_chat_id = settings.TELEGRAM_CHAT_ID
         self.bot = Bot(token=self.telegram_bot_token)
 
     async def send_message(self, notification: Notification):

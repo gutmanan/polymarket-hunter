@@ -5,6 +5,7 @@ from polymarket_hunter.dal.slug_store import RedisSlugStore
 router = APIRouter(prefix="/market", tags=["Subscribed Markets"])
 slug_store = RedisSlugStore()
 
+
 @router.get("")
 async def get():
     return {"slugs": await slug_store.list()}

@@ -3,21 +3,20 @@ from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
-from dotenv import load_dotenv
 from web3 import Web3, AsyncWeb3
 
+from polymarket_hunter.config.settings import settings
 from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, CTF_ADDRESS, CTF_ABI, ZERO_B32, \
     MAIN_EXCHANGE_ADDRESS, NEG_RISK_MARKETS_ADDRESS, NEG_RISK_ADAPTER_ADDRESS
 from polymarket_hunter.utils.logger import setup_logger
 
-load_dotenv()
 logger = setup_logger(__name__)
 
 
 class DataClient:
     def __init__(self, timeout: int = 15.0):
-        self.data_url = os.environ.get("DATA_HOST", "https://data-api.polymarket.com")
-        self.polygon_rpc = os.getenv("RPC_URL")
+        self.data_url = settings.DATA_HOST
+        self.polygon_rpc = settings.RPC_URL
         self.positions_endpoint = self.data_url + "/positions"
         self.closed_positions_endpoint = self.data_url + "/closed-positions"
         self.value_endpoint = self.data_url + "/value"

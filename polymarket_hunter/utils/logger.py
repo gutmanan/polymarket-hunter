@@ -16,8 +16,8 @@ def setup_logger(name: str) -> logging.Logger:
     
     # Create formatters
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(taskName)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        '%(asctime)s %(levelname)-8s [%(taskName)s] %(message)s',
+        datefmt='%H:%M:%S'
     )
     
     # Console handler

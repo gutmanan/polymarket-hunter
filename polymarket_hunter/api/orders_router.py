@@ -54,7 +54,7 @@ async def place_order(payload: ApiOrderRequest):
         order_type=payload.order_type,
         request_source=RequestSource.API_CALL,
         action=StrategyAction(
-            side=Side.BUY,
+            side=payload.side,
             size=payload.size,
             outcome=payload.outcome
         ),

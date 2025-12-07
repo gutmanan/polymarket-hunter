@@ -20,6 +20,7 @@ class SchedulerService:
     def add_jobs(self) -> None:
         tasks: List[SchedulerTask] = [
             HourlyMarketsTask(self._slugs_subscriber),
+            # AnalyzeMarketsTask(self._slugs_subscriber),
             TradeResolverTask(),
             ReportNotifierTask(),
         ]

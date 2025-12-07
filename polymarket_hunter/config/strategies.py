@@ -5,17 +5,17 @@ from polymarket_hunter.dal.datamodel.strategy import Strategy, Rule
 from polymarket_hunter.dal.datamodel.strategy_action import StrategyAction, Side
 from polymarket_hunter.utils.helper import time_left_sec, late_threshold_sec
 
-CRYPTO_SPREAD = 0.03  # per-outcome spread cap for safer fills
-NON_CRYPTO_SPREAD = 0.05
-MIN_LIQ = 10_000_000_000  # skip illiquid books
+MAX_SPREAD = 0.05
+MIN_LIQUIDITY = 100_000  # skip illiquid books
 
+POLITICS_TAGS = {"Politics", "Geopolitics"}
 CRYPTO_TAGS = {"Crypto"}
 SPORT_TAGS = {"Sports"}
 FINANCE_TAGS = {"Finance"}
 PRICE_TAGS = {"Up or Down"}
 INTERVAL_TAGS = {"1H", "4H"}
 
-HIGH_RISK_TAGS = CRYPTO_TAGS | SPORT_TAGS | FINANCE_TAGS | PRICE_TAGS
+HIGH_RISK_TAGS = CRYPTO_TAGS | SPORT_TAGS | FINANCE_TAGS | PRICE_TAGS | INTERVAL_TAGS
 
 # ---------- tag helpers ----------
 
@@ -55,39 +55,39 @@ def spread(ctx: MarketContext, outcome: str):
     return a - b if (a and b) else float("inf")
 
 
-def ok_liquidity(ctx: MarketContext):
-    return (ctx.liquidity >= MIN_LIQ) if ctx.liquidity else False
+def has_min_liquidity(ctx: MarketContext):
+    return (ctx.liquidity >= MIN_LIQUIDITY) if ctx.liquidity else False
 
 
 strategies = [
     Strategy(
-        name="High Probability (Non-Crypto)",
+        name="High Probability (Politics)",
         condition_fn=lambda ctx: (
-                ok_liquidity(ctx)
-                and not has_any(ctx, HIGH_RISK_TAGS)
+                has_min_liquidity(ctx)
+                and has_any(ctx, POLITICS_TAGS)
         ),
         rules=[
             Rule(
                 name="Buy Favorite (Yes)",
                 condition_fn=lambda ctx: (
-                        0.7 <= price(ctx, "Yes", Side.BUY) <= 0.9
-                        and spread(ctx, "Yes") <= NON_CRYPTO_SPREAD
+                        0.75 <= price(ctx, "Yes", Side.BUY) <= 0.95
+                        and spread(ctx, "Yes") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
-                    size=10,
+                    size=20,
                     outcome="Yes"
                 ),
             ),
             Rule(
                 name="Buy Favorite (No)",
                 condition_fn=lambda ctx: (
-                        0.7 <= price(ctx, "No", Side.BUY) <= 0.9
-                        and spread(ctx, "No") <= NON_CRYPTO_SPREAD
+                        0.75 <= price(ctx, "No", Side.BUY) <= 0.95
+                        and spread(ctx, "No") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
-                    size=10,
+                    size=20,
                     outcome="No"
                 ),
             ),
