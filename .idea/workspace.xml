@@ -5,27 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cb89ac06-2395-4346-8ee8-2543a7fe63c7" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/cancel_order_formatter.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/observability/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/api/orders_router.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/config/strategies.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/close_position_formatter.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/close_position_formatter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/notifier/formatter/trend_reversal_formatter.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/analyze_markets_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/analyze_markets_task.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/hourly_markets_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/report_notifier_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/tasks.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/scheduler/trade_resolver_task.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/order_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/service/resolution_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/strategy/strategy_evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_resolver.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_resolver.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/market_ws_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/observability_ws_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/core/subscriber/websocket/observability/metrics.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_error.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/datamodel/trade_error.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/order_request_store.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" beforeDir="false" afterPath="$PROJECT_DIR$/polymarket_hunter/dal/trade_record_store.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -316,7 +300,7 @@
       <option name="presentableId" value="Default" />
       <updated>1764854853698</updated>
       <workItem from="1764854854903" duration="43532000" />
-      <workItem from="1765108758154" duration="27271000" />
+      <workItem from="1765108758154" duration="34472000" />
     </task>
     <servers />
   </component>

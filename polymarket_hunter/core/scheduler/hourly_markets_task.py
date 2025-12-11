@@ -11,7 +11,7 @@ ISOZ_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 class HourlyMarketsTask(IntervalTask):
     def __init__(self, slugs_subscriber):
-        super().__init__("_daily_markets", minutes=5)
+        super().__init__("_daily_markets", minutes=15)
         self._slugs_subscriber = slugs_subscriber
         self._data = get_data_client()
         self._gamma = get_gamma_client()

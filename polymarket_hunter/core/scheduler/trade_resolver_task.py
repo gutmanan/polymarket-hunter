@@ -10,7 +10,7 @@ logger = setup_logger(__name__)
 
 class TradeResolverTask(IntervalTask):
     def __init__(self):
-        super().__init__("_trade_resolver", minutes=30)
+        super().__init__("_trade_resolver", minutes=15)
         self._resolver = get_resolution_service()
         self._notifier = RedisNotificationStore()
 

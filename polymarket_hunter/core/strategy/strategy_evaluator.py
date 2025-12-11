@@ -19,8 +19,8 @@ from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-EXIT_LOCKOUT_PERIOD_SECONDS = 5
-ENTER_LOCKOUT_PERIOD_SECONDS = 20
+EXIT_LOCKOUT_PERIOD_SECONDS = 1
+ENTER_LOCKOUT_PERIOD_SECONDS = 5
 REVERSAL_CONFIRMATION_PERIOD_SECONDS = 60
 
 class StrategyEvaluator:

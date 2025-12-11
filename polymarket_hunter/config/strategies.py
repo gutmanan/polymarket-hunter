@@ -60,72 +60,84 @@ def has_min_liquidity(ctx: MarketContext):
     return (ctx.liquidity >= MIN_LIQUIDITY) if ctx.liquidity else False
 
 
-strategies = [
-    # Strategy(
-    #     name="High Probability (Politics)",
-    #     condition_fn=lambda ctx: (
-    #             has_min_liquidity(ctx)
-    #             and has_any(ctx, POLITICS_TAGS)
-    #     ),
-    #     rules=[
-    #         Rule(
-    #             name="Buy Favorite (Yes)",
-    #             condition_fn=lambda ctx: (
-    #                     0.97 <= price(ctx, "Yes", Side.BUY) <= 0.99
-    #                     and spread(ctx, "Yes") <= MAX_SPREAD
-    #             ),
-    #             action=StrategyAction(
-    #                 side=Side.BUY,
-    #                 size=20,
-    #                 outcome="Yes"
-    #             ),
-    #         ),
-    #         Rule(
-    #             name="Buy Favorite (No)",
-    #             condition_fn=lambda ctx: (
-    #                     0.97 <= price(ctx, "No", Side.BUY) <= 0.99
-    #                     and spread(ctx, "No") <= MAX_SPREAD
-    #             ),
-    #             action=StrategyAction(
-    #                 side=Side.BUY,
-    #                 size=20,
-    #                 outcome="No"
-    #             ),
-    #         ),
-    #     ],
-    # ),
-    Strategy(
+# ---------- strategies ----------
+
+def get_politics_strategy():
+    return Strategy(
+        name="High Probability (Politics)",
+        condition_fn=lambda ctx: (
+                has_min_liquidity(ctx)
+                and has_any(ctx, POLITICS_TAGS)
+        ),
+        rules=[
+            Rule(
+                name="Buy Favorite (Yes)",
+                condition_fn=lambda ctx: (
+                        0.97 <= price(ctx, "Yes", Side.BUY) <= 0.99
+                        and spread(ctx, "Yes") <= MAX_SPREAD
+                ),
+                action=StrategyAction(
+                    side=Side.BUY,
+                    size=20,
+                    outcome="Yes"
+                ),
+            ),
+            Rule(
+                name="Buy Favorite (No)",
+                condition_fn=lambda ctx: (
+                        0.97 <= price(ctx, "No", Side.BUY) <= 0.99
+                        and spread(ctx, "No") <= MAX_SPREAD
+                ),
+                action=StrategyAction(
+                    side=Side.BUY,
+                    size=20,
+                    outcome="No"
+                ),
+            ),
+        ],
+    )
+
+
+def get_crypto_strategy():
+    return Strategy(
         name="High Probability (Crypto)",
         condition_fn=lambda ctx: (
                 has_min_liquidity(ctx)
                 and has_all(ctx, CRYPTO_UP_DOWN_TAGS)
                 and has_any(ctx, INTERVAL_TAGS)
+                and is_final_window(ctx, dynamic_tf=5)
         ),
         rules=[
             Rule(
                 name="Buy Favorite (Up)",
                 condition_fn=lambda ctx: (
-                        0.980 <= price(ctx, "Up", Side.BUY) <= 0.999
+                        0.96 <= price(ctx, "Up", Side.BUY)
                         and spread(ctx, "Up") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
-                    outcome="Up"
+                    outcome="Up",
+                    stop_loss=0.1
                 ),
             ),
             Rule(
                 name="Buy Favorite (Down)",
                 condition_fn=lambda ctx: (
-                        0.980 <= price(ctx, "Down", Side.BUY) <= 0.999
+                        0.96 <= price(ctx, "Down", Side.BUY)
                         and spread(ctx, "Down") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
-                    outcome="Down"
+                    outcome="Down",
+                    stop_loss=0.1
                 ),
             ),
         ],
-    ),
+    )
+
+
+strategies = [
+    get_crypto_strategy(),
 ]
