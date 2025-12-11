@@ -17,7 +17,7 @@ from polymarket_hunter.core.subscriber.websocket.actor.actor_manager import Acto
 from polymarket_hunter.core.subscriber.websocket.actor.msg_envelope import MsgEnvelope
 from polymarket_hunter.core.subscriber.websocket.handler.handlers import MessageContext
 from polymarket_hunter.core.subscriber.websocket.market_resolver import MarketResolver
-from polymarket_hunter.core.subscriber.websocket.observability_ws_client import CLIENT_UPTIME_SECONDS, MESSAGE_COUNT
+from polymarket_hunter.core.subscriber.websocket.observability.metrics import CLIENT_UPTIME_SECONDS, MESSAGE_COUNT
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)

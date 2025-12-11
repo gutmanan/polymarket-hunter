@@ -3,7 +3,7 @@ from typing import Any
 
 from aiolimiter import AsyncLimiter
 
-from polymarket_hunter.core.scheduler.tasks import BaseDateTask
+from polymarket_hunter.core.scheduler.tasks import DateTask
 from polymarket_hunter.core.service.genai_service import GenAIService
 from polymarket_hunter.dal.db import write_object
 from polymarket_hunter.utils.logger import setup_logger
@@ -11,9 +11,9 @@ from polymarket_hunter.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
-class AnalyzeMarketsTask(BaseDateTask):
+class AnalyzeMarketsTask(DateTask):
     def __init__(self, slugs_subscriber):
-        super().__init__("_analyze_markets", date=None, misfire_grace_time=120)
+        super().__init__("_analyze_markets", run_date=None)
         self._slug_subscriber = slugs_subscriber
         self._genai_service = GenAIService()
         self._semaphore = asyncio.Semaphore(100)

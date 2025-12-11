@@ -19,8 +19,8 @@ from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-EXIT_LOCKOUT_PERIOD_SECONDS = 10
-ENTER_LOCKOUT_PERIOD_SECONDS = 180
+EXIT_LOCKOUT_PERIOD_SECONDS = 5
+ENTER_LOCKOUT_PERIOD_SECONDS = 20
 REVERSAL_CONFIRMATION_PERIOD_SECONDS = 60
 
 class StrategyEvaluator:
@@ -84,7 +84,7 @@ class StrategyEvaluator:
                 strategy_name=request.strategy_name,
                 rule_name=request.rule_name,
                 code=EventCode.TREND_REVERSAL,
-                error="Recent reversal - waiting confirm period"
+                error="Waiting confirmation period"
             )
             return False
 
@@ -99,7 +99,7 @@ class StrategyEvaluator:
                 strategy_name=request.strategy_name,
                 rule_name=request.rule_name,
                 code=EventCode.TREND_MISMATCH,
-                error=f"Trend mismatch - {request.side} is not allowed for trend direction {trend.direction}"
+                error=f"{request.side} is not allowed with trend direction {trend.direction}"
             )
             return False
 
@@ -123,6 +123,17 @@ class StrategyEvaluator:
     async def should_enter(self, context: MarketContext, outcome: str) -> Optional[OrderRequest]:
         result = self._find_action_for_context(context, outcome)
         if result is None:
+            await TradeEvent.log(
+                ctx=context,
+                outcome=outcome,
+                side=Side.BUY,
+                state=EventState.BLOCKED,
+                request_source=RequestSource.STRATEGY_ENTER,
+                strategy_name="N/A",
+                rule_name="N/A",
+                code=EventCode.NO_ENTER,
+                error="No enter criteria met"
+            )
             return None
 
         strategy, rule = result
@@ -253,7 +264,7 @@ class StrategyEvaluator:
         current_price_float = float(current_price)
 
         sl_trigger_price = 0.50 if stop >= 1.0 else entry_price - stop
-        tp_trigger_price = min(entry_price + tp, 0.99)
+        tp_trigger_price = min(entry_price + tp, 0.999)
 
         hit_stop = current_price_float <= sl_trigger_price
         hit_tp = current_price_float >= tp_trigger_price

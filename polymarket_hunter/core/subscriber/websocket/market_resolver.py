@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from async_lru import alru_cache
 
 from polymarket_hunter.core.client.gamma import get_gamma_client
-from polymarket_hunter.core.subscriber.websocket.observability_ws_client import SLUG_RESOLUTION_LATENCY
+from polymarket_hunter.core.subscriber.websocket.observability.metrics import SLUG_RESOLUTION_LATENCY
 from polymarket_hunter.utils.logger import setup_logger
 
 logger = setup_logger(__name__)

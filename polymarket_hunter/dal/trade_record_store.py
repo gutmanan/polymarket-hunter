@@ -34,7 +34,7 @@ class RedisTradeRecordStore:
         parts = [market_id or "*", asset_id or "*", side or "*", "*"]
         return ":".join(parts)
 
-    def _record_ts(self, rec: "TradeRecord") -> float:
+    def _record_ts(self, rec: TradeRecord) -> float:
         try:
             return float(rec.created_ts or 0)
         except Exception:

@@ -14,6 +14,7 @@ class EventCode(StrEnum):
     TREND_FLAT = "TREND_FLAT"
     TREND_REVERSAL = "TREND_REVERSAL"
     TREND_MISMATCH = "TREND_MISMATCH"
+    NO_ENTER = "NO_ENTER"
     NO_EXIT = "NO_EXIT"
     SLIPPAGE = "SLIPPAGE"
     LOCKOUT = "LOCKOUT"
@@ -60,7 +61,7 @@ class TradeEvent(SQLModel, table=True):
             error: Optional[str] = None,
             additional_info: Optional[dict] = None
     ):
-        err = TradeEvent(
+        event = TradeEvent(
             market_id=ctx.condition_id,
             asset_id=ctx.outcome_assets[outcome],
             slug=ctx.slug,
@@ -75,4 +76,4 @@ class TradeEvent(SQLModel, table=True):
             rule_name=rule_name,
             additional_info=additional_info
         )
-        await write_object(err)
+        await write_object(event)

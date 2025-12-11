@@ -3,15 +3,15 @@ from datetime import datetime, timezone, time, timedelta
 
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
-from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
+from polymarket_hunter.core.scheduler.tasks import IntervalTask
 from polymarket_hunter.utils.helper import market_has_ended
 
 ISOZ_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 
-class HourlyMarketsTask(BaseIntervalTask):
+class HourlyMarketsTask(IntervalTask):
     def __init__(self, slugs_subscriber):
-        super().__init__("_daily_markets", minutes=60, misfire_grace_time=120)
+        super().__init__("_daily_markets", minutes=5)
         self._slugs_subscriber = slugs_subscriber
         self._data = get_data_client()
         self._gamma = get_gamma_client()
@@ -20,7 +20,7 @@ class HourlyMarketsTask(BaseIntervalTask):
         now = datetime.now(timezone.utc)
         start = datetime.combine(now.date() - timedelta(days=1), time(0, 0, 0, tzinfo=timezone.utc))
         start_iso = start.strftime(ISOZ_FMT)
-        end = datetime.combine(now.date() + timedelta(days=32), time(23, 59, 59, tzinfo=timezone.utc))
+        end = datetime.combine(now.date() + timedelta(days=2), time(23, 59, 59, tzinfo=timezone.utc))
         end_iso = end.strftime(ISOZ_FMT)
 
         markets = await self._gamma.get_all_markets(
@@ -69,7 +69,7 @@ class HourlyMarketsTask(BaseIntervalTask):
                 continue
 
             tags = [t["label"] for t in m["tags"]]
-            if any(tag in tags for tag in ("Sports", "Crypto", "Finance")):
+            if any(tag in tags for tag in ("Sports", "Finance")):
                 continue
 
             slugs.add(slug)

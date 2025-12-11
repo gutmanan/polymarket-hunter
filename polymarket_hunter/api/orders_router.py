@@ -40,6 +40,19 @@ async def get_order(slug: str, outcome: str, side: str):
     return await order_store.get(market_id, token_id, side)
 
 
+@router.get("/open_positions")
+async def get_open_positions():
+    positions = []
+    for p in await order_store.get_all(side=Side.BUY):
+        positions.append({
+            "slug": p.context.slug,
+            "market_id": p.market_id,
+            "outcome": p.outcome,
+            "asset_id": p.asset_id
+        })
+    return positions
+
+
 @router.put("")
 async def place_order(payload: ApiOrderRequest):
     market_id, token_id = await _derive_market_keys(payload.slug, payload.outcome)

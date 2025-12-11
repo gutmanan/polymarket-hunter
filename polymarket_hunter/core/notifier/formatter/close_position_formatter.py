@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def format_position_message(pos: dict[str, Any]):
+def format_close_position_message(pos: dict[str, Any]):
     """
     Unified position message formatter: closed position.
     Returns HTML-formatted Telegram message.

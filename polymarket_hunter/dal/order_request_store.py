@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import json
-from typing import Optional, List
+from typing import Optional, List, AsyncIterator
 
 import redis.asyncio as redis
 
 from polymarket_hunter.dal.datamodel.order_request import OrderRequest
 from polymarket_hunter.dal.db import REDIS_CLIENT
 
-ORDERS_KEY = "hunter:order_requests"
+ORDER_REQUESTS_KEY = "hunter:order_requests"
 DOC_PREFIX = "hunter:order_requests:doc:"
 EVENTS_CHANNEL = "hunter:order_requests:events"
 
@@ -30,10 +30,38 @@ class RedisOrderRequestStore:
     def _doc_key(market_id: str, asset_id: str, side: str) -> str:
         return f"{DOC_PREFIX}{market_id}:{asset_id}:{side}"
 
+    def _build_pattern(self, market_id: Optional[str], asset_id: Optional[str], side: Optional[str]) -> str:
+        parts = [market_id or "*", asset_id or "*", side or "*"]
+        return ":".join(parts)
+
+    def _record_ts(self, req: OrderRequest) -> float:
+        try:
+            return float(req.created_ts or 0)
+        except Exception:
+            return 0
+
+    async def _iter_records(self, pattern: str, *, page_size: int = 1000) -> AsyncIterator[OrderRequest]:
+        cursor: int | str = 0
+        while True:
+            cursor, members = await self._redis.sscan(ORDER_REQUESTS_KEY, cursor=cursor, match=pattern, count=page_size)
+            if members:
+                doc_keys = [f"{DOC_PREFIX}{m}" for m in members]
+                raws = await self._redis.mget(doc_keys)
+                for raw in raws:
+                    if not raw:
+                        continue
+                    try:
+                        yield OrderRequest.model_validate_json(raw)
+                    except Exception:
+                        # skip malformed docs
+                        continue
+            if cursor in (0, "0"):
+                break
+
     # ---------- CRUD ----------
 
     async def contains(self, market_id: str, asset_id: str, side: str) -> bool:
-        return await self._redis.sismember(ORDERS_KEY, self._set_key(market_id, asset_id, side))
+        return await self._redis.sismember(ORDER_REQUESTS_KEY, self._set_key(market_id, asset_id, side))
 
     async def add(self, order: OrderRequest) -> None:
         """
@@ -47,7 +75,7 @@ class RedisOrderRequestStore:
         raw = order.model_dump_json()
 
         pipe = self._redis.pipeline(transaction=True)
-        pipe.sadd(ORDERS_KEY, skey)
+        pipe.sadd(ORDER_REQUESTS_KEY, skey)
         pipe.set(dkey, raw)
         sadd_res, _ = await pipe.execute()
 
@@ -60,6 +88,12 @@ class RedisOrderRequestStore:
         if not raw:
             return None
         return OrderRequest.model_validate_json(raw)
+
+    async def get_all(self, market_id: Optional[str] = None, asset_id: Optional[str] = None, side: Optional[str] = None, *, sort_desc: bool = True) -> List[OrderRequest]:
+        pattern = self._build_pattern(market_id, asset_id, side)
+        items = [rec async for rec in self._iter_records(pattern)]
+        items.sort(key=lambda rec: rec.created_ts, reverse=sort_desc)
+        return items
 
     async def update(self, order: OrderRequest) -> None:
         """Simple upsert without re-publishing add/update differentiation"""
@@ -75,14 +109,14 @@ class RedisOrderRequestStore:
         skey = self._set_key(market_id, asset_id, side)
         dkey = self._doc_key(market_id, asset_id, side)
         pipe = self._redis.pipeline(transaction=True)
-        pipe.srem(ORDERS_KEY, skey)
+        pipe.srem(ORDER_REQUESTS_KEY, skey)
         pipe.delete(dkey)
         removed, _ = await pipe.execute()
         if removed:
             await self._publish({"action": "remove", "key": skey})
 
     async def list_keys(self) -> List[str]:
-        members = await self._redis.smembers(ORDERS_KEY)
+        members = await self._redis.smembers(ORDER_REQUESTS_KEY)
         return sorted(members)
 
     async def list_docs(self) -> List[OrderRequest]:
@@ -106,7 +140,7 @@ class RedisOrderRequestStore:
         return out
 
     async def cleanup_stale_pointers(self) -> int:
-        skeys = await self._redis.smembers(ORDERS_KEY)
+        skeys = await self._redis.smembers(ORDER_REQUESTS_KEY)
         if not skeys:
             return 0
 
@@ -135,7 +169,7 @@ class RedisOrderRequestStore:
         removed_count = 0
         if stale_keys_to_remove:
             remove_pipe = self._redis.pipeline(transaction=True)
-            remove_pipe.srem(ORDERS_KEY, *stale_keys_to_remove)
+            remove_pipe.srem(ORDER_REQUESTS_KEY, *stale_keys_to_remove)
 
             results = await remove_pipe.execute()
             removed_count = results[0]

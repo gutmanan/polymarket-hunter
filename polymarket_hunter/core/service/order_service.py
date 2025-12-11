@@ -63,7 +63,6 @@ class OrderService:
             await self._deactivate_opposite(tr)
             await self._trade_store.add(tr)
         else:
-            error = res.get("error")
             await TradeEvent.log(
                 ctx=req.context,
                 outcome=req.outcome,
@@ -73,7 +72,7 @@ class OrderService:
                 strategy_name=req.strategy_name,
                 rule_name=req.rule_name,
                 code=EventCode.CLOB_API_ERROR,
-                error=error.get("error") if isinstance(error, dict) else str(error)
+                error=str(res.get("error", "Unknown error"))
             )
 
         if is_success == (req.side == Side.SELL):
@@ -87,10 +86,8 @@ class OrderService:
         side = req.side
         order_id = res.get("orderID")
         status = (res.get("status") or "").upper() or "LIVE"
-        size_orig = float(res.get("makingAmount", 0) or 0) if side == Side.BUY else float(
-            res.get("takingAmount", 0) or 0)
-        size_mat = float(res.get("takingAmount", 0) or 0) if side == Side.BUY else float(
-            res.get("makingAmount", 0) or 0)
+        size_orig = float(res.get("makingAmount", 0) or 0) if side == Side.BUY else float(res.get("takingAmount", 0) or 0)
+        size_mat = float(res.get("takingAmount", 0) or 0) if side == Side.BUY else float(res.get("makingAmount", 0) or 0)
         price = size_orig / size_mat if size_mat > 0 else 0
 
         return TradeRecord(

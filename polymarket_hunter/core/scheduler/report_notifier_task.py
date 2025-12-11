@@ -1,4 +1,4 @@
-from polymarket_hunter.core.scheduler.tasks import BaseIntervalTask
+from polymarket_hunter.core.scheduler.tasks import CronTask
 from polymarket_hunter.core.service.report_service import ReportService
 from polymarket_hunter.dal.notification_store import RedisNotificationStore
 from polymarket_hunter.utils.logger import setup_logger
@@ -6,9 +6,9 @@ from polymarket_hunter.utils.logger import setup_logger
 logger = setup_logger(__name__)
 
 
-class ReportNotifierTask(BaseIntervalTask):
+class ReportNotifierTask(CronTask):
     def __init__(self):
-        super().__init__("_report_notifier", minutes=60, misfire_grace_time=60)
+        super().__init__("_report_notifier", expr="0 * * * *")
         self._reporter = ReportService()
         self._notifier = RedisNotificationStore()
 

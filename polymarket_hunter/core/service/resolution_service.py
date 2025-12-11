@@ -1,5 +1,6 @@
 import asyncio
 import time
+import uuid
 from functools import lru_cache
 from typing import List, Any, Dict, Tuple
 
@@ -7,6 +8,9 @@ from polymarket_hunter.core.client.clob import get_clob_client
 from polymarket_hunter.core.client.data import get_data_client
 from polymarket_hunter.core.client.gamma import get_gamma_client
 from polymarket_hunter.core.service.trade_service import TradeService
+from polymarket_hunter.dal.datamodel.strategy_action import Side
+from polymarket_hunter.dal.datamodel.trade_record import TradeRecord
+from polymarket_hunter.dal.order_request_store import RedisOrderRequestStore
 from polymarket_hunter.dal.trade_record_store import RedisTradeRecordStore
 from polymarket_hunter.utils.helper import market_has_ended, ts_to_seconds
 from polymarket_hunter.utils.logger import setup_logger
@@ -20,6 +24,7 @@ class ResolutionService:
         self._gamma = get_gamma_client()
         self._clob = get_clob_client()
         self._data = get_data_client()
+        self._order_store = RedisOrderRequestStore()
         self._trade_store = RedisTradeRecordStore()
         self._trade_service = TradeService()
 
@@ -32,6 +37,45 @@ class ResolutionService:
         if market_id not in cache:
             cache[market_id] = await self._clob.get_market_async(market_id)
         return cache[market_id]
+
+    async def _build_trade_record(self, pos: Dict[str, Any]) -> TradeRecord:
+        market_id = pos["conditionId"]
+        asset_id = pos["asset"]
+        side = Side.SELL
+        order_id = uuid.uuid4().hex
+        status = "REDEEMED"
+        size_orig = pos["size"]
+        size_mat = pos["currentValue"]
+        price = size_orig / size_mat if size_mat > 0 else 0
+        req = await self._order_store.get(market_id, asset_id, Side.BUY)
+
+        return TradeRecord(
+            market_id=market_id,
+            asset_id=asset_id,
+            side=side,
+            order_id=order_id,
+            slug=pos["slug"],
+            outcome=pos["outcome"],
+            matched_amount=size_mat,
+            size=size_orig,
+            price=price,
+            trader_side="TAKER",
+            status=status,
+            active=True,
+            order_request=req,
+            raw_events=[dict(pos)],
+            event_type="resolution",
+            matched_ts=time.time()
+        )
+
+    async def _deactivate_opposite(self, tr):
+        opposite_side = Side.BUY if tr.side == Side.SELL else Side.SELL
+        existing_opposite = await self._trade_store.get_active(tr.market_id, tr.asset_id, opposite_side)
+        if existing_opposite:
+            deactivate = existing_opposite.model_copy(update={"active": False})
+            deactivate.touch()
+            await self._trade_store.update(deactivate)
+            await self._order_store.remove(tr.market_id, tr.asset_id, opposite_side)
 
     # ---------- public APIs ----------
 
@@ -105,6 +149,9 @@ class ResolutionService:
 
                 try:
                     res = await self._data.redeem_position(cid)
+                    tr = await self._build_trade_record(p)
+                    await self._deactivate_opposite(tr)
+                    await self._trade_store.add(tr)
                     results_ok.append((cid, res, p))
                 except Exception as e:
                     results_fail.append((cid, e, p))
