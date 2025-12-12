@@ -22,6 +22,9 @@ logger = setup_logger(__name__)
 EXIT_LOCKOUT_PERIOD_SECONDS = 1
 ENTER_LOCKOUT_PERIOD_SECONDS = 5
 REVERSAL_CONFIRMATION_PERIOD_SECONDS = 60
+DEFAULT_TAKE_PROFIT = 0.99
+DEFAULT_STOP_LOSS = 0.5
+
 
 class StrategyEvaluator:
     def __init__(self):
@@ -263,8 +266,8 @@ class StrategyEvaluator:
         tp: float = enter_request.action.take_profit
         current_price_float = float(current_price)
 
-        sl_trigger_price = 0.50 if stop >= 1.0 else entry_price - stop
-        tp_trigger_price = min(entry_price + tp, 0.999)
+        sl_trigger_price = DEFAULT_STOP_LOSS if stop >= 1.0 else entry_price - stop
+        tp_trigger_price = min(entry_price + tp, DEFAULT_TAKE_PROFIT)
 
         hit_stop = current_price_float <= sl_trigger_price
         hit_tp = current_price_float >= tp_trigger_price
@@ -288,11 +291,13 @@ class StrategyEvaluator:
 
         if hit_stop:
             request_source = RequestSource.STOP_LOSS
-            message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=True)
+            message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price,
+                                          is_stop=True)
             await self._notifier.send_message(message)
         if hit_tp:
             request_source = RequestSource.TAKE_PROFIT
-            message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price, is_stop=False)
+            message = format_exit_message(context, outcome, Decimal.from_float(entry_price), current_price,
+                                          is_stop=False)
             await self._notifier.send_message(message)
 
         order_type = OrderType.MARKET

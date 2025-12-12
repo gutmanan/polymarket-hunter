@@ -73,7 +73,7 @@ def get_politics_strategy():
             Rule(
                 name="Buy Favorite (Yes)",
                 condition_fn=lambda ctx: (
-                        0.97 <= price(ctx, "Yes", Side.BUY) <= 0.99
+                        0.9 <= price(ctx, "Yes", Side.BUY) <= 0.99
                         and spread(ctx, "Yes") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
@@ -85,7 +85,7 @@ def get_politics_strategy():
             Rule(
                 name="Buy Favorite (No)",
                 condition_fn=lambda ctx: (
-                        0.97 <= price(ctx, "No", Side.BUY) <= 0.99
+                        0.9 <= price(ctx, "No", Side.BUY) <= 0.99
                         and spread(ctx, "No") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
@@ -111,7 +111,7 @@ def get_crypto_strategy():
             Rule(
                 name="Buy Favorite (Up)",
                 condition_fn=lambda ctx: (
-                        0.96 <= price(ctx, "Up", Side.BUY)
+                        0.98 <= price(ctx, "Up", Side.BUY)
                         and spread(ctx, "Up") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
@@ -124,7 +124,7 @@ def get_crypto_strategy():
             Rule(
                 name="Buy Favorite (Down)",
                 condition_fn=lambda ctx: (
-                        0.96 <= price(ctx, "Down", Side.BUY)
+                        0.98 <= price(ctx, "Down", Side.BUY)
                         and spread(ctx, "Down") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
@@ -139,5 +139,6 @@ def get_crypto_strategy():
 
 
 strategies = [
+    get_politics_strategy(),
     get_crypto_strategy(),
 ]
