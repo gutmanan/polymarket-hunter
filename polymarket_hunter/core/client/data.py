@@ -1,8 +1,8 @@
-import os
 from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
+from dotenv import load_dotenv
 from web3 import Web3, AsyncWeb3
 
 from polymarket_hunter.config.settings import settings
@@ -10,8 +10,10 @@ from polymarket_hunter.constants import USDC_ADDRESS, USDC_ABI, USDC_DECIMALS, C
     MAIN_EXCHANGE_ADDRESS, NEG_RISK_MARKETS_ADDRESS, NEG_RISK_ADAPTER_ADDRESS
 from polymarket_hunter.utils.logger import setup_logger
 
+load_dotenv()
 logger = setup_logger(__name__)
 
+MAX_AMOUNT = 2 ** 256 - 1
 
 class DataClient:
     def __init__(self, timeout: int = 15.0):
@@ -23,7 +25,7 @@ class DataClient:
         self.trades_endpoint = self.data_url + "/trades"
         self._client = httpx.AsyncClient(timeout=timeout)
 
-        self.private_key = os.getenv("PRIVATE_KEY")
+        self.private_key = settings.PRIVATE_KEY
 
         if not self.private_key:
             raise RuntimeError("Missing PRIVATE_KEY in env")
@@ -99,6 +101,35 @@ class DataClient:
             allowance = await usdc.functions.allowance(user_address, address_cksum).call()
             allowances[index] = allowance
         return allowances
+
+    async def approve_usdc(self, user: str = None):
+        user_address = Web3.to_checksum_address(user if user is not None else self.address)
+        usdc = self.w3.eth.contract(address=Web3.to_checksum_address(USDC_ADDRESS), abi=USDC_ABI)
+
+        spenders = [MAIN_EXCHANGE_ADDRESS, NEG_RISK_MARKETS_ADDRESS, NEG_RISK_ADAPTER_ADDRESS]
+
+        for spender in spenders:
+            spender_cksum = Web3.to_checksum_address(spender)
+            current_allowance = await usdc.functions.allowance(user_address, spender_cksum).call()
+            if current_allowance == 0:
+                logger.info(f"Approving {spender}...")
+                nonce = await self.w3.eth.get_transaction_count(user_address)
+                gas_price = await self.w3.eth.gas_price
+
+                tx = await usdc.functions.approve(
+                    spender_cksum,
+                    MAX_AMOUNT
+                ).build_transaction({
+                    'from': user_address,
+                    'nonce': nonce,
+                    'gasPrice': gas_price
+                })
+
+                tx["gas"] = await self.w3.eth.estimate_gas(tx)
+                signed = self.account.sign_transaction(tx)
+                h = await self.w3.eth.send_raw_transaction(signed.raw_transaction)
+                receipt = await self.w3.eth.wait_for_transaction_receipt(h)
+                logger.info(f"Approved {spender}. Hash: {receipt['transactionHash'].hex()}")
 
     async def split_position(self, condition_id: str, partition=None, amount_wei: int = 0) -> str:
         """

@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 from decimal import Decimal
 from functools import lru_cache
 from typing import Any, Dict, Optional, List
@@ -11,6 +10,7 @@ from py_clob_client.clob_types import OrderArgs, MarketOrderArgs, OpenOrderParam
 from py_clob_client.constants import POLYGON
 from py_clob_client.exceptions import PolyApiException
 
+from polymarket_hunter.config.settings import settings
 from polymarket_hunter.dal.datamodel.strategy_action import TIF, Side
 from polymarket_hunter.utils.helper import with_timeout, retryable, q4, q2
 from polymarket_hunter.utils.logger import setup_logger
@@ -22,9 +22,9 @@ logger = setup_logger(__name__)
 class CLOBClient:
 
     def __init__(self):
-        self.clob_host = os.getenv("CLOB_HOST", "https://clob.polymarket.com")
-        self.private_key = os.getenv("PRIVATE_KEY")
-        self.polygon_rpc = os.getenv("RPC_URL")
+        self.clob_host = settings.CLOB_HOST
+        self.private_key = settings.PRIVATE_KEY
+        self.polygon_rpc = settings.RPC_URL
         self.chain_id = POLYGON
 
         if not self.private_key:

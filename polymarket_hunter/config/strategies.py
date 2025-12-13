@@ -73,24 +73,24 @@ def get_politics_strategy():
             Rule(
                 name="Buy Favorite (Yes)",
                 condition_fn=lambda ctx: (
-                        0.9 <= price(ctx, "Yes", Side.BUY) <= 0.99
+                        0.95 <= price(ctx, "Yes", Side.BUY) < 0.99
                         and spread(ctx, "Yes") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
-                    size=20,
+                    size=10,
                     outcome="Yes"
                 ),
             ),
             Rule(
                 name="Buy Favorite (No)",
                 condition_fn=lambda ctx: (
-                        0.9 <= price(ctx, "No", Side.BUY) <= 0.99
+                        0.95 <= price(ctx, "No", Side.BUY) < 0.99
                         and spread(ctx, "No") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
-                    size=20,
+                    size=10,
                     outcome="No"
                 ),
             ),
@@ -105,33 +105,31 @@ def get_crypto_strategy():
                 has_min_liquidity(ctx)
                 and has_all(ctx, CRYPTO_UP_DOWN_TAGS)
                 and has_any(ctx, INTERVAL_TAGS)
-                and is_final_window(ctx, dynamic_tf=5)
+                and is_final_window(ctx, static_tf=60)
         ),
         rules=[
             Rule(
                 name="Buy Favorite (Up)",
                 condition_fn=lambda ctx: (
-                        0.98 <= price(ctx, "Up", Side.BUY)
+                        0.99 <= price(ctx, "Up", Side.BUY)
                         and spread(ctx, "Up") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
-                    outcome="Up",
-                    stop_loss=0.1
+                    outcome="Up"
                 ),
             ),
             Rule(
                 name="Buy Favorite (Down)",
                 condition_fn=lambda ctx: (
-                        0.98 <= price(ctx, "Down", Side.BUY)
+                        0.99 <= price(ctx, "Down", Side.BUY)
                         and spread(ctx, "Down") <= MAX_SPREAD
                 ),
                 action=StrategyAction(
                     side=Side.BUY,
                     size=10,
-                    outcome="Down",
-                    stop_loss=0.1
+                    outcome="Down"
                 ),
             ),
         ],
